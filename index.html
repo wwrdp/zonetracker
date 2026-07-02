@@ -79,7 +79,7 @@
   }
   .zrow span:last-child { font-variant-numeric: tabular-nums; }
   .zrow.on { font-weight: 700; }
-  .zextra { padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; text-align: center; color: #fff; }
+  .zextra { padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; text-align: center; color: #fff; margin-bottom: 6px; }
   .zhint { padding: 6px 12px; font-size: 12.5px; color: #6B7280; text-align: center; }
 </style>
 </head>
@@ -94,21 +94,53 @@ const FINNHUB_KEY = "d8vk65pr01qgrv4p0h90d8vk65pr01qgrv4p0h9g";
 const QUOTE_COOLDOWN_MS = 60 * 1000; // กัน rate limit: ดึง Finnhub ชุดใหม่ได้ทุก 60 วิ
 const AUTO_REFRESH_MS = 90 * 1000;   // ราคาวิ่งเองทุก 90 วิ (เฉพาะตอนหน้า active)
 
+// scheme "standard" (Growth): 6 band, เพดานแดง = watch×1.2
+// scheme "deep" (UnderDog/Future): 7 band, ดำต่ำกว่า deep×0.75, ส้ม scout→scout×1.02, แดงเกิน scout×1.02
 const TABS = [
-  { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  palette:"standard" },
-  { id:"underdog", label:"UnderDog", gid:"1001789567", zones:["watch","target","strong","review"], line2:"note", palette:"standard" },
-  { id:"future",   label:"Future",   gid:"1405580845", zones:["scout","build","load","pause"],     line2:"note", palette:"future" },
+  { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  scheme:"standard" },
+  { id:"underdog", label:"UnderDog", gid:"1001789567", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
+  { id:"future",   label:"Future",   gid:"1405580845", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
 ];
 
 const COLORS = {
-  purple:{bg:"#8E4FB5",fg:"#fff"}, blue:{bg:"#4C7BE8",fg:"#fff"},
-  teal:{bg:"#45A5A0",fg:"#fff"},   green:{bg:"#3E9B5F",fg:"#fff"},
-  olive:{bg:"#8FAF57",fg:"#fff"},  yellow:{bg:"#E8B34B",fg:"#fff"},
+  black:{bg:"#26282B",fg:"#fff"},  purple:{bg:"#8E4FB5",fg:"#fff"},
+  blue:{bg:"#4C7BE8",fg:"#fff"},   green:{bg:"#3E9B5F",fg:"#fff"},
+  yellow:{bg:"#E8B34B",fg:"#fff"}, orange:{bg:"#E8833A",fg:"#fff"},
   plain:{bg:"#EFEFEF",fg:"#1F2328"}, red:{bg:"#D64B3F",fg:"#fff"},
 };
-const PALETTES = {
-  standard:["purple","blue","green","yellow","plain","red"],
-  future:["purple","blue","teal","olive","yellow","red"],
+
+// band(c, [r4,r5,r6,r7]) คืน index ของสีใน palette (null = ข้อมูลไม่ครบ)
+// thBand(i) = band ที่ threshold row i (0=r4 .. 3=r7) เป็นเพดาน (ใช้ highlight ใน detail)
+const SCHEMES = {
+  standard: {
+    palette:["purple","blue","green","yellow","plain","red"],
+    band(c,[r4,r5,r6,r7]){
+      if(c==null||[r4,r5,r6,r7].some(x=>x==null)) return null;
+      if(c<=r7) return 0; if(c<=r6) return 1; if(c<=r5) return 2;
+      if(c<=r4) return 3; if(c<=r4*1.2) return 4; return 5;
+    },
+    thBand(i){ return 3-i; },
+    extras(idx,t,zones){
+      if(idx===5) return {type:"extra", color:"red", text:"เกิน +20% จาก "+zones[0]+" ("+fmtPrice(t[0]*1.2)+")"};
+      if(idx===4) return {type:"hint", text:"อยู่เหนือ "+zones[0]+" แต่ยังไม่เกิน +20% ("+fmtPrice(t[0]*1.2)+")"};
+      return null;
+    },
+  },
+  deep: {
+    palette:["black","purple","blue","green","yellow","orange","red"],
+    band(c,[r4,r5,r6,r7]){
+      if(c==null||[r4,r5,r6,r7].some(x=>x==null)) return null;
+      if(c<=r7*0.75) return 0; if(c<=r7) return 1; if(c<=r6) return 2;
+      if(c<=r5) return 3; if(c<=r4) return 4; if(c<=r4*1.02) return 5; return 6;
+    },
+    thBand(i){ return 4-i; },
+    extras(idx,t,zones){
+      if(idx===6) return {type:"extra", color:"red", text:"เกิน "+zones[0]+" +2% ("+fmtPrice(t[0]*1.02)+")"};
+      if(idx===5) return {type:"extra", color:"orange", text:"ใกล้ "+zones[0]+" (ไม่เกิน "+fmtPrice(t[0]*1.02)+")"};
+      if(idx===0) return {type:"extra", color:"black", text:"ต่ำกว่า "+zones[3]+" −25% ("+fmtPrice(t[3]*0.75)+")"};
+      return null;
+    },
+  },
 };
 
 const state = { data:{}, quotes:{}, lastQuoteFetch:0 };
@@ -143,7 +175,7 @@ function extractStocks(rows){
     if(!ticker) continue;
     out.push({
       ticker,
-      symbol:ticker.replace(/\*/g,"").trim().toUpperCase(), // *NNE* -> NNE สำหรับ Finnhub
+      symbol:ticker.replace(/\*/g,"").trim().toUpperCase(),
       note:(rows[1]&&rows[1][col]||"").trim(),
       sheetPrice:parseNum(rows[2]&&rows[2][col]),
       t:[parseNum(rows[3]&&rows[3][col]),parseNum(rows[4]&&rows[4][col]),
@@ -152,21 +184,15 @@ function extractStocks(rows){
   }
   return out;
 }
-// ราคาที่ใช้จริง: Finnhub ก่อน ถ้าไม่มีใช้ Sheet
 function priceOf(s){
   const q=state.quotes[s.symbol];
   if(q!=null) return {value:q, live:true};
   return {value:s.sheetPrice, live:false};
 }
-function bandIndex(c,t){
-  const [r4,r5,r6,r7]=t;
-  if(c==null||[r4,r5,r6,r7].some(x=>x==null)) return null;
-  if(c<=r7) return 0; if(c<=r6) return 1; if(c<=r5) return 2;
-  if(c<=r4) return 3; if(c<=r4*1.2) return 4; return 5;
-}
-function colorFor(s,pal){
-  const i=bandIndex(priceOf(s).value,s.t);
-  return i==null?COLORS.plain:COLORS[PALETTES[pal][i]];
+function colorFor(s,tab){
+  const sch=SCHEMES[tab.scheme];
+  const i=sch.band(priceOf(s).value,s.t);
+  return i==null?COLORS.plain:COLORS[sch.palette[i]];
 }
 function fmtPrice(n){
   if(n==null) return "—";
@@ -192,15 +218,15 @@ async function loadTab(tab){
 async function fetchQuote(symbol){
   try{
     const res=await fetch("https://finnhub.io/api/v1/quote?symbol="+encodeURIComponent(symbol)+"&token="+FINNHUB_KEY);
-    if(!res.ok) return; // 429/403 -> ใช้ราคา Sheet แทน
+    if(!res.ok) return;
     const j=await res.json();
     if(j&&typeof j.c==="number"&&j.c>0) state.quotes[symbol]=j.c;
-  }catch(e){ /* เงียบๆ แล้ว fallback ราคา Sheet */ }
+  }catch(e){ /* fallback ราคา Sheet */ }
 }
 
 async function fetchAllQuotes(){
   const now=Date.now();
-  if(now-state.lastQuoteFetch<QUOTE_COOLDOWN_MS) return; // cooldown: ใช้ quote เดิมไปก่อน
+  if(now-state.lastQuoteFetch<QUOTE_COOLDOWN_MS) return;
   state.lastQuoteFetch=now;
   const symbols=new Set();
   TABS.forEach(tab=>{
@@ -216,10 +242,10 @@ async function loadAll(){
   if(!TABS.some(t=>(state.data[t.id]||{}).stocks)){
     document.getElementById("grid-area").innerHTML='<div class="msg">กำลังดึงข้อมูล...</div>';
   }
-  await Promise.all(TABS.map(loadTab)); // 1) โครงสร้าง+zone+note+ราคาสำรอง จาก Sheet
-  render();                             //    แสดงก่อนด้วยราคา Sheet (เร็ว)
-  await fetchAllQuotes();               // 2) ราคาสดจาก Finnhub
-  render();                             //    แล้วอัปเดตสี/ราคาทับ
+  await Promise.all(TABS.map(loadTab));
+  render();
+  await fetchAllQuotes();
+  render();
   btn.classList.remove("spin");
 }
 
@@ -245,7 +271,7 @@ function render(){
     const d=state.data[tab.id]||{};
     if(!d.stocks) return;
     d.stocks.forEach(s=>{
-      const c=colorFor(s,tab.palette);
+      const c=colorFor(s,tab);
       const btn=document.createElement("button");
       btn.className="tile";
       btn.style.background=c.bg; btn.style.color=c.fg;
@@ -263,20 +289,24 @@ function render(){
 }
 
 function openDetail(s,tab){
-  const c=colorFor(s,tab.palette);
+  const sch=SCHEMES[tab.scheme];
+  const c=colorFor(s,tab);
   const p=priceOf(s);
-  const idx=bandIndex(p.value,s.t);
+  const idx=sch.band(p.value,s.t);
   let rows="";
   s.t.forEach((th,i)=>{
-    const band=3-i;
+    const band=sch.thBand(i);
     const on=idx!=null&&idx===band;
-    const bc=COLORS[PALETTES[tab.palette][band]];
+    const bc=COLORS[sch.palette[band]];
     rows+='<div class="zrow'+(on?" on":"")+'"'+(on?' style="background:'+bc.bg+';color:'+bc.fg+'"':'')+'>'
         +'<span style="text-transform:capitalize">'+tab.zones[i]+'</span><span>'+fmtPrice(th)+'</span></div>';
   });
   let extra="";
-  if(idx===5) extra='<div class="zextra" style="background:'+COLORS.red.bg+'">เกิน +20% จาก '+tab.zones[0]+' ('+fmtPrice(s.t[0]*1.2)+')</div>';
-  if(idx===4) extra='<div class="zhint">อยู่เหนือ '+tab.zones[0]+' แต่ยังไม่เกิน +20% ('+fmtPrice(s.t[0]*1.2)+')</div>';
+  const ex=idx!=null?sch.extras(idx,s.t,tab.zones):null;
+  if(ex){
+    if(ex.type==="extra") extra='<div class="zextra" style="background:'+COLORS[ex.color].bg+'">'+ex.text+'</div>';
+    else extra='<div class="zhint">'+ex.text+'</div>';
+  }
   const noteLine = s.note ? '<div class="d-note">'+(tab.line2==="dca"?"DCA เดือนนี้: ฿":"")+esc(s.note)+'</div>' : "";
   document.getElementById("sheet").innerHTML=
     '<div class="d-head"><div class="d-chip" style="background:'+c.bg+'"></div>'
@@ -301,8 +331,7 @@ async function autoTick(){
   render();
   btn.classList.remove("spin");
 }
-setInterval(autoTick, 15*1000); // เช็คทุก 15 วิ ว่าครบรอบหรือยัง
-// กลับมาที่หน้า (สลับแอปกลับมา) ถ้าราคาเก่าเกินรอบ ให้ดึงใหม่ทันที
+setInterval(autoTick, 15*1000);
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState==="visible") autoTick();
 });
