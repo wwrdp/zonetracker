@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>paint invest</title>
+<style>
+  :root {
+    --bg: #F6F7F9; --ink: #1F2328; --muted: #9CA3AF; --line: #E5E7EB;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Thai', sans-serif;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  header {
+    padding: 18px 16px 10px; display: flex; align-items: baseline; justify-content: space-between;
+    padding-top: calc(18px + env(safe-area-inset-top));
+  }
+  h1 { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.3px; }
+  #updated { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  #refresh {
+    border: 1px solid var(--line); background: #fff; border-radius: 10px;
+    padding: 8px 14px; font-size: 13px; font-weight: 700; color: var(--ink);
+    cursor: pointer; font-family: inherit;
+  }
+  nav { display: flex; gap: 6px; padding: 4px 16px 12px; }
+  nav button {
+    flex: 1; padding: 9px 0; border-radius: 12px; border: none; cursor: pointer;
+    background: #fff; color: #4B5563; font-weight: 700; font-size: 13.5px;
+    box-shadow: inset 0 0 0 1px var(--line); font-family: inherit;
+  }
+  nav button.active { background: var(--ink); color: #fff; box-shadow: none; }
+  #grid-area { padding: 0 12px 24px; }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .tile {
+    aspect-ratio: 1/1; border: none; border-radius: 10px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; padding: 4px; overflow: hidden; font-family: inherit;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: transform .08s ease;
+  }
+  .tile:active { transform: scale(0.95); }
+  .tile .tk {
+    font-weight: 800; font-size: clamp(11px, 3.6vw, 17px); letter-spacing: .2px;
+    line-height: 1.1; white-space: nowrap;
+  }
+  .tile .l2 {
+    line-height: 1.15; text-align: center; word-break: break-word;
+    font-variant-numeric: tabular-nums;
+  }
+  .tile .l2.dca { font-size: clamp(10px, 2.8vw, 13px); font-weight: 700; opacity: .95; }
+  .tile .l2.dca.zero { opacity: .55; }
+  .tile .l2.note { font-size: clamp(8px, 2.2vw, 11px); font-weight: 500; opacity: .95; }
+  .msg { text-align: center; padding: 40px 0; color: var(--muted); font-size: 14px; }
+  .err {
+    background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C;
+    border-radius: 12px; padding: 12px 14px; font-size: 13px; margin: 0 4px;
+  }
+  .err button {
+    border: none; background: transparent; color: #B91C1C; font-weight: 700;
+    text-decoration: underline; cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+  /* detail sheet */
+  #overlay {
+    position: fixed; inset: 0; background: rgba(15,18,24,.45); z-index: 50;
+    display: none; align-items: flex-end; justify-content: center;
+  }
+  #overlay.show { display: flex; }
+  #sheet {
+    width: 100%; max-width: 560px; background: #fff; border-radius: 18px 18px 0 0;
+    padding: 20px 20px calc(28px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 30px rgba(0,0,0,.18);
+  }
+  .d-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .d-chip { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; }
+  .d-tk { font-weight: 800; font-size: 20px; }
+  .d-note { font-size: 13px; color: #6B7280; }
+  .d-price { font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; margin-left: auto; }
+  .zrow {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; border-radius: 8px; background: #F4F5F7; color: #374151;
+    font-weight: 500; font-size: 14px; margin-bottom: 6px;
+  }
+  .zrow span:last-child { font-variant-numeric: tabular-nums; }
+  .zrow.on { font-weight: 700; }
+  .zextra { padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; text-align: center; color: #fff; }
+  .zhint { padding: 6px 12px; font-size: 12.5px; color: #6B7280; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>paint invest</h1>
+      <div id="updated">กำลังโหลด...</div>
+    </div>
+    <button id="refresh">↻ refresh</button>
+  </header>
+  <nav id="tabs"></nav>
+  <div id="grid-area"></div>
+</div>
+<div id="overlay"><div id="sheet"></div></div>
+
+<script>
+const PUB_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_Ov-ZcBPZuMoXbqGJ8g0Q3yt3MyZXtxZ95jugQU-GFPTNA4RrnQSjRBm6lEZBZY74u3y77oYsJILT/pub";
+
+const TABS = [
+  { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  palette:"standard" },
+  { id:"underdog", label:"UnderDog", gid:"1001789567", zones:["watch","target","strong","review"], line2:"note", palette:"standard" },
+  { id:"future",   label:"Future",   gid:"1405580845", zones:["scout","build","load","pause"],     line2:"note", palette:"future" },
+];
+
+const COLORS = {
+  purple:{bg:"#8E4FB5",fg:"#fff"}, blue:{bg:"#4C7BE8",fg:"#fff"},
+  teal:{bg:"#45A5A0",fg:"#fff"},   green:{bg:"#3E9B5F",fg:"#fff"},
+  olive:{bg:"#8FAF57",fg:"#fff"},  yellow:{bg:"#E8B34B",fg:"#fff"},
+  plain:{bg:"#EFEFEF",fg:"#1F2328"}, red:{bg:"#D64B3F",fg:"#fff"},
+};
+const PALETTES = {
+  standard:["purple","blue","green","yellow","plain","red"],
+  future:["purple","blue","teal","olive","yellow","red"],
+};
+
+const state = { active:"growth", data:{}, updated:null };
+
+function parseCSV(text){
+  const rows=[]; let row=[], cur="", q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+    else{
+      if(ch==='"') q=true;
+      else if(ch===","){ row.push(cur); cur=""; }
+      else if(ch==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
+      else if(ch!=="\r") cur+=ch;
+    }
+  }
+  if(cur.length||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+function parseNum(s){
+  if(s==null) return null;
+  const c=String(s).replace(/[$,฿\s]/g,"");
+  if(c==="") return null;
+  const n=parseFloat(c);
+  return Number.isFinite(n)?n:null;
+}
+function extractStocks(rows){
+  if(!rows||rows.length<3) return [];
+  const out=[]; const width=Math.max(...rows.slice(0,8).map(r=>r.length));
+  for(let col=1;col<width;col++){
+    const ticker=(rows[0]&&rows[0][col]||"").trim();
+    if(!ticker) continue;
+    out.push({
+      ticker,
+      note:(rows[1]&&rows[1][col]||"").trim(),
+      current:parseNum(rows[2]&&rows[2][col]),
+      t:[parseNum(rows[3]&&rows[3][col]),parseNum(rows[4]&&rows[4][col]),
+         parseNum(rows[5]&&rows[5][col]),parseNum(rows[6]&&rows[6][col])],
+    });
+  }
+  return out;
+}
+function bandIndex(c,t){
+  const [r4,r5,r6,r7]=t;
+  if(c==null||[r4,r5,r6,r7].some(x=>x==null)) return null;
+  if(c<=r7) return 0; if(c<=r6) return 1; if(c<=r5) return 2;
+  if(c<=r4) return 3; if(c<=r4*1.2) return 4; return 5;
+}
+function colorFor(s,pal){
+  const i=bandIndex(s.current,s.t);
+  return i==null?COLORS.plain:COLORS[PALETTES[pal][i]];
+}
+function fmtPrice(n){
+  if(n==null) return "—";
+  return n>=1000 ? "$"+n.toLocaleString("en-US",{maximumFractionDigits:2}) : "$"+n.toFixed(2);
+}
+function esc(s){ return s.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+async function loadTab(tab){
+  state.data[tab.id]={loading:true};
+  render();
+  try{
+    const url=PUB_BASE+"?gid="+tab.gid+"&single=true&output=csv&cachebust="+Date.now();
+    const res=await fetch(url,{cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const text=await res.text();
+    if(text.trim().startsWith("<")) throw new Error("ได้ HTML แทน CSV — เช็คว่า publish เป็น CSV แล้ว");
+    const stocks=extractStocks(parseCSV(text));
+    if(!stocks.length) throw new Error("ไม่พบข้อมูลหุ้น");
+    state.data[tab.id]={stocks};
+    state.updated=new Date();
+  }catch(e){
+    state.data[tab.id]={error:e.message||"โหลดไม่สำเร็จ"};
+  }
+  render();
+}
+function loadAll(){ TABS.forEach(loadTab); }
+
+function render(){
+  // header
+  document.getElementById("updated").textContent = state.updated
+    ? "อัปเดต "+state.updated.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"})+" · ราคา delay ~20 นาที"
+    : "กำลังโหลด...";
+  // tabs
+  const nav=document.getElementById("tabs");
+  nav.innerHTML="";
+  TABS.forEach(t=>{
+    const b=document.createElement("button");
+    b.textContent=t.label;
+    if(t.id===state.active) b.className="active";
+    b.onclick=()=>{ state.active=t.id; render(); };
+    nav.appendChild(b);
+  });
+  // grid
+  const area=document.getElementById("grid-area");
+  const tab=TABS.find(t=>t.id===state.active);
+  const d=state.data[tab.id]||{};
+  if(d.loading){ area.innerHTML='<div class="msg">กำลังดึงข้อมูล...</div>'; return; }
+  if(d.error){
+    area.innerHTML='<div class="err">โหลด '+tab.label+' ไม่สำเร็จ: '+esc(d.error)+' <button id="retry">ลองใหม่</button></div>';
+    document.getElementById("retry").onclick=()=>loadTab(tab);
+    return;
+  }
+  if(!d.stocks){ area.innerHTML=""; return; }
+  const grid=document.createElement("div");
+  grid.className="grid";
+  d.stocks.forEach(s=>{
+    const c=colorFor(s,tab.palette);
+    const btn=document.createElement("button");
+    btn.className="tile";
+    btn.style.background=c.bg; btn.style.color=c.fg;
+    let l2="";
+    if(s.note!==""){
+      const cls = tab.line2==="dca" ? ("dca"+(s.note==="0"?" zero":"")) : "note";
+      l2='<div class="l2 '+cls+'">'+esc(s.note)+'</div>';
+    }
+    btn.innerHTML='<div class="tk">'+esc(s.ticker)+'</div>'+l2;
+    btn.onclick=()=>openDetail(s,tab);
+    grid.appendChild(btn);
+  });
+  area.innerHTML="";
+  area.appendChild(grid);
+}
+
+function openDetail(s,tab){
+  const c=colorFor(s,tab.palette);
+  const idx=bandIndex(s.current,s.t);
+  let rows="";
+  s.t.forEach((th,i)=>{
+    const band=3-i;
+    const on=idx!=null&&idx===band;
+    const bc=COLORS[PALETTES[tab.palette][band]];
+    rows+='<div class="zrow'+(on?" on":"")+'"'+(on?' style="background:'+bc.bg+';color:'+bc.fg+'"':'')+'>'
+        +'<span style="text-transform:capitalize">'+tab.zones[i]+'</span><span>'+fmtPrice(th)+'</span></div>';
+  });
+  let extra="";
+  if(idx===5) extra='<div class="zextra" style="background:'+COLORS.red.bg+'">เกิน +20% จาก '+tab.zones[0]+' ('+fmtPrice(s.t[0]*1.2)+')</div>';
+  if(idx===4) extra='<div class="zhint">อยู่เหนือ '+tab.zones[0]+' แต่ยังไม่เกิน +20% ('+fmtPrice(s.t[0]*1.2)+')</div>';
+  const noteLine = s.note ? '<div class="d-note">'+(tab.line2==="dca"?"DCA เดือนนี้: ฿":"")+esc(s.note)+'</div>' : "";
+  document.getElementById("sheet").innerHTML=
+    '<div class="d-head"><div class="d-chip" style="background:'+c.bg+'"></div>'
+    +'<div><div class="d-tk">'+esc(s.ticker)+'</div>'+noteLine+'</div>'
+    +'<div class="d-price">'+fmtPrice(s.current)+'</div></div>'
+    +rows+extra;
+  document.getElementById("overlay").classList.add("show");
+}
+document.getElementById("overlay").onclick=function(e){
+  if(e.target===this) this.classList.remove("show");
+};
+document.getElementById("refresh").onclick=loadAll;
+loadAll();
+</script>
+</body>
+</html>
