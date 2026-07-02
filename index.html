@@ -7,35 +7,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>paint invest</title>
 <style>
-  :root {
-    --bg: #F6F7F9; --ink: #1F2328; --muted: #9CA3AF; --line: #E5E7EB;
-  }
+  :root { --bg: #F6F7F9; --ink: #1F2328; --muted: #9CA3AF; --line: #E5E7EB; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Thai', sans-serif;
-    padding-bottom: env(safe-area-inset-bottom);
   }
-  .wrap { max-width: 640px; margin: 0 auto; }
-  header {
-    padding: 18px 16px 10px; display: flex; align-items: baseline; justify-content: space-between;
-    padding-top: calc(18px + env(safe-area-inset-top));
+  .wrap {
+    max-width: 640px; margin: 0 auto;
+    padding: calc(8px + env(safe-area-inset-top)) 8px calc(80px + env(safe-area-inset-bottom));
   }
-  h1 { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.3px; }
-  #updated { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
-  #refresh {
-    border: 1px solid var(--line); background: #fff; border-radius: 10px;
-    padding: 8px 14px; font-size: 13px; font-weight: 700; color: var(--ink);
-    cursor: pointer; font-family: inherit;
-  }
-  nav { display: flex; gap: 6px; padding: 4px 16px 12px; }
-  nav button {
-    flex: 1; padding: 9px 0; border-radius: 12px; border: none; cursor: pointer;
-    background: #fff; color: #4B5563; font-weight: 700; font-size: 13.5px;
-    box-shadow: inset 0 0 0 1px var(--line); font-family: inherit;
-  }
-  nav button.active { background: var(--ink); color: #fff; box-shadow: none; }
-  #grid-area { padding: 0 12px 24px; }
   .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
   .tile {
     aspect-ratio: 1/1; border: none; border-radius: 10px; cursor: pointer;
@@ -58,12 +39,22 @@
   .msg { text-align: center; padding: 40px 0; color: var(--muted); font-size: 14px; }
   .err {
     background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C;
-    border-radius: 12px; padding: 12px 14px; font-size: 13px; margin: 0 4px;
+    border-radius: 12px; padding: 12px 14px; font-size: 13px; margin: 6px 4px;
   }
   .err button {
     border: none; background: transparent; color: #B91C1C; font-weight: 700;
     text-decoration: underline; cursor: pointer; font-size: 13px; font-family: inherit;
   }
+  #refresh {
+    position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom));
+    width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line);
+    background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
+    color: var(--ink); font-size: 20px; cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,.12); z-index: 40;
+  }
+  #refresh:active { transform: scale(.92); }
+  #refresh.spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   /* detail sheet */
   #overlay {
     position: fixed; inset: 0; background: rgba(15,18,24,.45); z-index: 50;
@@ -92,17 +83,8 @@
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>paint invest</h1>
-      <div id="updated">กำลังโหลด...</div>
-    </div>
-    <button id="refresh">↻ refresh</button>
-  </header>
-  <nav id="tabs"></nav>
-  <div id="grid-area"></div>
-</div>
+<div class="wrap"><div id="grid-area"></div></div>
+<button id="refresh" aria-label="refresh">↻</button>
 <div id="overlay"><div id="sheet"></div></div>
 
 <script>
@@ -125,7 +107,7 @@ const PALETTES = {
   future:["purple","blue","teal","olive","yellow","red"],
 };
 
-const state = { active:"growth", data:{}, updated:null };
+const state = { data:{} };
 
 function parseCSV(text){
   const rows=[]; let row=[], cur="", q=false;
@@ -193,58 +175,63 @@ async function loadTab(tab){
     const stocks=extractStocks(parseCSV(text));
     if(!stocks.length) throw new Error("ไม่พบข้อมูลหุ้น");
     state.data[tab.id]={stocks};
-    state.updated=new Date();
   }catch(e){
     state.data[tab.id]={error:e.message||"โหลดไม่สำเร็จ"};
   }
   render();
 }
-function loadAll(){ TABS.forEach(loadTab); }
+async function loadAll(){
+  const btn=document.getElementById("refresh");
+  btn.classList.add("spin");
+  await Promise.all(TABS.map(loadTab));
+  btn.classList.remove("spin");
+}
 
 function render(){
-  // header
-  document.getElementById("updated").textContent = state.updated
-    ? "อัปเดต "+state.updated.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"})+" · ราคา delay ~20 นาที"
-    : "กำลังโหลด...";
-  // tabs
-  const nav=document.getElementById("tabs");
-  nav.innerHTML="";
-  TABS.forEach(t=>{
-    const b=document.createElement("button");
-    b.textContent=t.label;
-    if(t.id===state.active) b.className="active";
-    b.onclick=()=>{ state.active=t.id; render(); };
-    nav.appendChild(b);
-  });
-  // grid
   const area=document.getElementById("grid-area");
-  const tab=TABS.find(t=>t.id===state.active);
-  const d=state.data[tab.id]||{};
-  if(d.loading){ area.innerHTML='<div class="msg">กำลังดึงข้อมูล...</div>'; return; }
-  if(d.error){
-    area.innerHTML='<div class="err">โหลด '+tab.label+' ไม่สำเร็จ: '+esc(d.error)+' <button id="retry">ลองใหม่</button></div>';
-    document.getElementById("retry").onclick=()=>loadTab(tab);
+  area.innerHTML="";
+  const anyLoading=TABS.some(t=>(state.data[t.id]||{}).loading);
+  const anyData=TABS.some(t=>(state.data[t.id]||{}).stocks);
+  if(anyLoading&&!anyData){
+    area.innerHTML='<div class="msg">กำลังดึงข้อมูล...</div>';
     return;
   }
-  if(!d.stocks){ area.innerHTML=""; return; }
+  // error banners (ถ้ามี)
+  TABS.forEach(tab=>{
+    const d=state.data[tab.id]||{};
+    if(d.error){
+      const div=document.createElement("div");
+      div.className="err";
+      div.innerHTML='โหลด '+tab.label+' ไม่สำเร็จ: '+esc(d.error)+' ';
+      const b=document.createElement("button");
+      b.textContent="ลองใหม่";
+      b.onclick=()=>loadTab(tab);
+      div.appendChild(b);
+      area.appendChild(div);
+    }
+  });
+  // grid เดียวต่อเนื่องทุกพอร์ต
   const grid=document.createElement("div");
   grid.className="grid";
-  d.stocks.forEach(s=>{
-    const c=colorFor(s,tab.palette);
-    const btn=document.createElement("button");
-    btn.className="tile";
-    btn.style.background=c.bg; btn.style.color=c.fg;
-    let l2="";
-    if(s.note!==""){
-      const cls = tab.line2==="dca" ? ("dca"+(s.note==="0"?" zero":"")) : "note";
-      l2='<div class="l2 '+cls+'">'+esc(s.note)+'</div>';
-    }
-    btn.innerHTML='<div class="tk">'+esc(s.ticker)+'</div>'+l2;
-    btn.onclick=()=>openDetail(s,tab);
-    grid.appendChild(btn);
+  TABS.forEach(tab=>{
+    const d=state.data[tab.id]||{};
+    if(!d.stocks) return;
+    d.stocks.forEach(s=>{
+      const c=colorFor(s,tab.palette);
+      const btn=document.createElement("button");
+      btn.className="tile";
+      btn.style.background=c.bg; btn.style.color=c.fg;
+      let l2="";
+      if(s.note!==""){
+        const cls = tab.line2==="dca" ? ("dca"+(s.note==="0"?" zero":"")) : "note";
+        l2='<div class="l2 '+cls+'">'+esc(s.note)+'</div>';
+      }
+      btn.innerHTML='<div class="tk">'+esc(s.ticker)+'</div>'+l2;
+      btn.onclick=()=>openDetail(s,tab);
+      grid.appendChild(btn);
+    });
   });
-  area.innerHTML="";
-  area.appendChild(grid);
+  if(grid.children.length) area.appendChild(grid);
 }
 
 function openDetail(s,tab){
