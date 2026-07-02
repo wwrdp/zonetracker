@@ -92,6 +92,7 @@
 const PUB_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_Ov-ZcBPZuMoXbqGJ8g0Q3yt3MyZXtxZ95jugQU-GFPTNA4RrnQSjRBm6lEZBZY74u3y77oYsJILT/pub";
 const FINNHUB_KEY = "d8vk65pr01qgrv4p0h90d8vk65pr01qgrv4p0h9g";
 const QUOTE_COOLDOWN_MS = 60 * 1000; // กัน rate limit: ดึง Finnhub ชุดใหม่ได้ทุก 60 วิ
+const AUTO_REFRESH_MS = 90 * 1000;   // ราคาวิ่งเองทุก 90 วิ (เฉพาะตอนหน้า active)
 
 const TABS = [
   { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  palette:"standard" },
@@ -289,6 +290,23 @@ document.getElementById("overlay").onclick=function(e){
   if(e.target===this) this.classList.remove("show");
 };
 document.getElementById("refresh").onclick=loadAll;
+
+// auto-refresh ราคา: วิ่งเองเมื่อหน้า active และครบรอบเวลา
+async function autoTick(){
+  if(document.visibilityState!=="visible") return;
+  if(Date.now()-state.lastQuoteFetch<AUTO_REFRESH_MS) return;
+  const btn=document.getElementById("refresh");
+  btn.classList.add("spin");
+  await fetchAllQuotes();
+  render();
+  btn.classList.remove("spin");
+}
+setInterval(autoTick, 15*1000); // เช็คทุก 15 วิ ว่าครบรอบหรือยัง
+// กลับมาที่หน้า (สลับแอปกลับมา) ถ้าราคาเก่าเกินรอบ ให้ดึงใหม่ทันที
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState==="visible") autoTick();
+});
+
 loadAll();
 </script>
 </body>
