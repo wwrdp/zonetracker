@@ -70,7 +70,8 @@
   .d-chip { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; }
   .d-tk { font-weight: 800; font-size: 20px; }
   .d-note { font-size: 13px; color: #6B7280; }
-  .d-price { font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; margin-left: auto; }
+  .d-price { font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; margin-left: auto; text-align: right; }
+  .d-src { font-size: 10.5px; font-weight: 500; color: #9CA3AF; }
   .zrow {
     display: flex; justify-content: space-between; align-items: center;
     padding: 8px 12px; border-radius: 8px; background: #F4F5F7; color: #374151;
@@ -89,6 +90,8 @@
 
 <script>
 const PUB_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_Ov-ZcBPZuMoXbqGJ8g0Q3yt3MyZXtxZ95jugQU-GFPTNA4RrnQSjRBm6lEZBZY74u3y77oYsJILT/pub";
+const FINNHUB_KEY = "d8vk65pr01qgrv4p0h90d8vk65pr01qgrv4p0h9g";
+const QUOTE_COOLDOWN_MS = 60 * 1000; // กัน rate limit: ดึง Finnhub ชุดใหม่ได้ทุก 60 วิ
 
 const TABS = [
   { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  palette:"standard" },
@@ -107,7 +110,7 @@ const PALETTES = {
   future:["purple","blue","teal","olive","yellow","red"],
 };
 
-const state = { data:{} };
+const state = { data:{}, quotes:{}, lastQuoteFetch:0 };
 
 function parseCSV(text){
   const rows=[]; let row=[], cur="", q=false;
@@ -139,13 +142,20 @@ function extractStocks(rows){
     if(!ticker) continue;
     out.push({
       ticker,
+      symbol:ticker.replace(/\*/g,"").trim().toUpperCase(), // *NNE* -> NNE สำหรับ Finnhub
       note:(rows[1]&&rows[1][col]||"").trim(),
-      current:parseNum(rows[2]&&rows[2][col]),
+      sheetPrice:parseNum(rows[2]&&rows[2][col]),
       t:[parseNum(rows[3]&&rows[3][col]),parseNum(rows[4]&&rows[4][col]),
          parseNum(rows[5]&&rows[5][col]),parseNum(rows[6]&&rows[6][col])],
     });
   }
   return out;
+}
+// ราคาที่ใช้จริง: Finnhub ก่อน ถ้าไม่มีใช้ Sheet
+function priceOf(s){
+  const q=state.quotes[s.symbol];
+  if(q!=null) return {value:q, live:true};
+  return {value:s.sheetPrice, live:false};
 }
 function bandIndex(c,t){
   const [r4,r5,r6,r7]=t;
@@ -154,7 +164,7 @@ function bandIndex(c,t){
   if(c<=r4) return 3; if(c<=r4*1.2) return 4; return 5;
 }
 function colorFor(s,pal){
-  const i=bandIndex(s.current,s.t);
+  const i=bandIndex(priceOf(s).value,s.t);
   return i==null?COLORS.plain:COLORS[PALETTES[pal][i]];
 }
 function fmtPrice(n){
@@ -164,8 +174,6 @@ function fmtPrice(n){
 function esc(s){ return s.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 
 async function loadTab(tab){
-  state.data[tab.id]={loading:true};
-  render();
   try{
     const url=PUB_BASE+"?gid="+tab.gid+"&single=true&output=csv&cachebust="+Date.now();
     const res=await fetch(url,{cache:"no-store"});
@@ -176,41 +184,60 @@ async function loadTab(tab){
     if(!stocks.length) throw new Error("ไม่พบข้อมูลหุ้น");
     state.data[tab.id]={stocks};
   }catch(e){
-    state.data[tab.id]={error:e.message||"โหลดไม่สำเร็จ"};
+    state.data[tab.id]={...(state.data[tab.id]||{}), error:e.message||"โหลดไม่สำเร็จ"};
   }
-  render();
 }
+
+async function fetchQuote(symbol){
+  try{
+    const res=await fetch("https://finnhub.io/api/v1/quote?symbol="+encodeURIComponent(symbol)+"&token="+FINNHUB_KEY);
+    if(!res.ok) return; // 429/403 -> ใช้ราคา Sheet แทน
+    const j=await res.json();
+    if(j&&typeof j.c==="number"&&j.c>0) state.quotes[symbol]=j.c;
+  }catch(e){ /* เงียบๆ แล้ว fallback ราคา Sheet */ }
+}
+
+async function fetchAllQuotes(){
+  const now=Date.now();
+  if(now-state.lastQuoteFetch<QUOTE_COOLDOWN_MS) return; // cooldown: ใช้ quote เดิมไปก่อน
+  state.lastQuoteFetch=now;
+  const symbols=new Set();
+  TABS.forEach(tab=>{
+    const d=state.data[tab.id]||{};
+    (d.stocks||[]).forEach(s=>symbols.add(s.symbol));
+  });
+  await Promise.all([...symbols].map(fetchQuote));
+}
+
 async function loadAll(){
   const btn=document.getElementById("refresh");
   btn.classList.add("spin");
-  await Promise.all(TABS.map(loadTab));
+  if(!TABS.some(t=>(state.data[t.id]||{}).stocks)){
+    document.getElementById("grid-area").innerHTML='<div class="msg">กำลังดึงข้อมูล...</div>';
+  }
+  await Promise.all(TABS.map(loadTab)); // 1) โครงสร้าง+zone+note+ราคาสำรอง จาก Sheet
+  render();                             //    แสดงก่อนด้วยราคา Sheet (เร็ว)
+  await fetchAllQuotes();               // 2) ราคาสดจาก Finnhub
+  render();                             //    แล้วอัปเดตสี/ราคาทับ
   btn.classList.remove("spin");
 }
 
 function render(){
   const area=document.getElementById("grid-area");
   area.innerHTML="";
-  const anyLoading=TABS.some(t=>(state.data[t.id]||{}).loading);
-  const anyData=TABS.some(t=>(state.data[t.id]||{}).stocks);
-  if(anyLoading&&!anyData){
-    area.innerHTML='<div class="msg">กำลังดึงข้อมูล...</div>';
-    return;
-  }
-  // error banners (ถ้ามี)
   TABS.forEach(tab=>{
     const d=state.data[tab.id]||{};
-    if(d.error){
+    if(d.error&&!d.stocks){
       const div=document.createElement("div");
       div.className="err";
       div.innerHTML='โหลด '+tab.label+' ไม่สำเร็จ: '+esc(d.error)+' ';
       const b=document.createElement("button");
       b.textContent="ลองใหม่";
-      b.onclick=()=>loadTab(tab);
+      b.onclick=()=>{ loadTab(tab).then(render); };
       div.appendChild(b);
       area.appendChild(div);
     }
   });
-  // grid เดียวต่อเนื่องทุกพอร์ต
   const grid=document.createElement("div");
   grid.className="grid";
   TABS.forEach(tab=>{
@@ -236,7 +263,8 @@ function render(){
 
 function openDetail(s,tab){
   const c=colorFor(s,tab.palette);
-  const idx=bandIndex(s.current,s.t);
+  const p=priceOf(s);
+  const idx=bandIndex(p.value,s.t);
   let rows="";
   s.t.forEach((th,i)=>{
     const band=3-i;
@@ -252,7 +280,8 @@ function openDetail(s,tab){
   document.getElementById("sheet").innerHTML=
     '<div class="d-head"><div class="d-chip" style="background:'+c.bg+'"></div>'
     +'<div><div class="d-tk">'+esc(s.ticker)+'</div>'+noteLine+'</div>'
-    +'<div class="d-price">'+fmtPrice(s.current)+'</div></div>'
+    +'<div class="d-price">'+fmtPrice(p.value)
+    +'<div class="d-src">'+(p.live?"● ราคาสด (Finnhub)":"ราคาจาก Sheet (~20 นาที)")+'</div></div></div>'
     +rows+extra;
   document.getElementById("overlay").classList.add("show");
 }
