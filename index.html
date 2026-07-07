@@ -173,6 +173,15 @@ function parseNum(s){
   const n=parseFloat(c);
   return Number.isFinite(n)?n:null;
 }
+// รับเฉพาะตัวเลขล้วน (ปฏิเสธ "193 / $15", "JUL" ฯลฯ) สำหรับเงื่อนไข eyes
+function parseStrictNum(s){
+  if(s==null) return null;
+  const c=String(s).trim().replace(/[$,฿\s]/g,"");
+  if(c==="") return null;
+  if(!/^-?\d*\.?\d+$/.test(c)) return null;
+  const n=parseFloat(c);
+  return Number.isFinite(n)?n:null;
+}
 function extractStocks(rows){
   if(!rows||rows.length<3) return [];
   const out=[]; const width=Math.max(...rows.slice(0,8).map(r=>r.length));
@@ -186,6 +195,7 @@ function extractStocks(rows){
       sheetPrice:parseNum(rows[2]&&rows[2][col]),
       t:[parseNum(rows[3]&&rows[3][col]),parseNum(rows[4]&&rows[4][col]),
          parseNum(rows[5]&&rows[5][col]),parseNum(rows[6]&&rows[6][col])],
+      row8:parseStrictNum(rows[7]&&rows[7][col]),
     });
   }
   return out;
@@ -286,7 +296,8 @@ function render(){
         const cls = tab.line2==="dca" ? ("dca"+(s.note==="0"?" zero":"")) : "note";
         l2='<div class="l2 '+cls+'">'+esc(s.note)+'</div>';
       }
-      btn.innerHTML='<div class="tk">'+esc(s.ticker)+'</div>'+l2;
+      const eyes = (s.row8!=null && s.row8 <= priceOf(s).value) ? " 👀" : "";
+      btn.innerHTML='<div class="tk">'+esc(s.ticker)+eyes+'</div>'+l2;
       btn.onclick=()=>openDetail(s,tab);
       grid.appendChild(btn);
     });
@@ -314,9 +325,10 @@ function openDetail(s,tab){
     else extra='<div class="zhint">'+ex.text+'</div>';
   }
   const noteLine = s.note ? '<div class="d-note">'+(tab.line2==="dca"?"DCA เดือนนี้: ฿":"")+esc(s.note)+'</div>' : "";
+  const eyes = (s.row8!=null && s.row8 <= p.value) ? " 👀" : "";
   document.getElementById("sheet").innerHTML=
     '<div class="d-head"><div class="d-chip" style="background:'+c.bg+'"></div>'
-    +'<div><div class="d-tk">'+esc(s.ticker)+'</div>'+noteLine+'</div>'
+    +'<div><div class="d-tk">'+esc(s.ticker)+eyes+'</div>'+noteLine+'</div>'
     +'<div class="d-price">'+fmtPrice(p.value)
     +'<div class="d-src">'+(p.live?"● ราคาสด (Finnhub)":"ราคาจาก Sheet (~20 นาที)")+'</div></div></div>'
     +rows+extra;
