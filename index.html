@@ -18,24 +18,30 @@
     padding: calc(8px + env(safe-area-inset-top)) 8px calc(80px + env(safe-area-inset-bottom));
   }
   .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  /* จอกว้าง (คอม): 10 คอลัมน์ต่อแถว */
+  @media (min-width: 700px) {
+    .wrap { max-width: 1180px; }
+    .grid { grid-template-columns: repeat(10, 1fr); }
+  }
   .tile {
     aspect-ratio: 1/1; border: none; border-radius: 10px; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 2px; padding: 4px; overflow: hidden; font-family: inherit;
     box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: transform .08s ease;
+    container-type: inline-size;
   }
   .tile:active { transform: scale(0.95); }
   .tile .tk {
-    font-weight: 800; font-size: clamp(11px, 3.6vw, 17px); letter-spacing: .2px;
+    font-weight: 800; font-size: clamp(11px, 22cqw, 20px); letter-spacing: .2px;
     line-height: 1.1; white-space: nowrap;
   }
   .tile .l2 {
     line-height: 1.15; text-align: center; word-break: break-word;
     font-variant-numeric: tabular-nums;
   }
-  .tile .l2.dca { font-size: clamp(10px, 2.8vw, 13px); font-weight: 700; opacity: .95; }
+  .tile .l2.dca { font-size: clamp(10px, 17cqw, 14px); font-weight: 700; opacity: .95; }
   .tile .l2.dca.zero { opacity: .55; }
-  .tile .l2.note { font-size: clamp(8px, 2.2vw, 11px); font-weight: 500; opacity: .95; }
+  .tile .l2.note { font-size: clamp(8px, 13cqw, 12px); font-weight: 500; opacity: .95; }
   .msg { text-align: center; padding: 40px 0; color: var(--muted); font-size: 14px; }
   .err {
     background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C;
