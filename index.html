@@ -296,7 +296,7 @@ function render(){
         const cls = tab.line2==="dca" ? ("dca"+(s.note==="0"?" zero":"")) : "note";
         l2='<div class="l2 '+cls+'">'+esc(s.note)+'</div>';
       }
-      const eyes = (s.row8!=null && s.row8 <= priceOf(s).value) ? " 👀" : "";
+      const eyes = (s.row8!=null && priceOf(s).value <= s.row8) ? " 👀" : "";
       btn.innerHTML='<div class="tk">'+esc(s.ticker)+eyes+'</div>'+l2;
       btn.onclick=()=>openDetail(s,tab);
       grid.appendChild(btn);
@@ -325,7 +325,7 @@ function openDetail(s,tab){
     else extra='<div class="zhint">'+ex.text+'</div>';
   }
   const noteLine = s.note ? '<div class="d-note">'+(tab.line2==="dca"?"DCA เดือนนี้: ฿":"")+esc(s.note)+'</div>' : "";
-  const eyes = (s.row8!=null && s.row8 <= p.value) ? " 👀" : "";
+  const eyes = (s.row8!=null && p.value <= s.row8) ? " 👀" : "";
   document.getElementById("sheet").innerHTML=
     '<div class="d-head"><div class="d-chip" style="background:'+c.bg+'"></div>'
     +'<div><div class="d-tk">'+esc(s.ticker)+eyes+'</div>'+noteLine+'</div>'
