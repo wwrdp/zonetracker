@@ -194,7 +194,7 @@ function parseStrictNum(s){
 }
 function extractStocks(rows){
   if(!rows||rows.length<3) return [];
-  const out=[]; const width=Math.max(...rows.slice(0,8).map(r=>r.length));
+  const out=[]; const width=Math.max(...rows.slice(0,9).map(r=>r.length));
   for(let col=1;col<width;col++){
     const ticker=(rows[0]&&rows[0][col]||"").trim();
     if(!ticker) continue;
@@ -206,6 +206,7 @@ function extractStocks(rows){
       t:[parseNum(rows[3]&&rows[3][col]),parseNum(rows[4]&&rows[4][col]),
          parseNum(rows[5]&&rows[5][col]),parseNum(rows[6]&&rows[6][col])],
       row8:parseStrictNum(rows[7]&&rows[7][col]),
+      row9:parseStrictNum(rows[8]&&rows[8][col]),
     });
   }
   return out;
@@ -311,8 +312,10 @@ function render(){
         const cls = tab.line2==="dca" ? ("dca"+(s.note==="0"?" zero":"")) : "note";
         l2='<div class="l2 '+cls+'">'+esc(s.note)+'</div>';
       }
-      const eyes = (s.row8!=null && priceOf(s).value <= s.row8) ? " 👀" : "";
-      btn.innerHTML='<div class="tk">'+esc(s.ticker)+eyes+'</div>'+l2;
+      const pv = priceOf(s).value;
+      const eyes = (s.row8!=null && pv!=null && pv <= s.row8) ? " 👀" : "";
+      const cheese = (s.row9!=null && pv!=null && pv >= s.row9) ? " 🧀" : "";
+      btn.innerHTML='<div class="tk">'+esc(s.ticker)+eyes+cheese+'</div>'+l2;
       btn.onclick=()=>openDetail(s,tab);
       grid.appendChild(btn);
     });
@@ -344,11 +347,15 @@ function openDetail(s,tab){
   if(sch.hideZones && s.row8!=null){
     extra+='<div class="zhint">👀 ที่ '+fmtPrice(s.row8)+'</div>';
   }
+  if(s.row9!=null){
+    extra+='<div class="zhint">🧀 ที่ '+fmtPrice(s.row9)+'</div>';
+  }
   const noteLine = s.note ? '<div class="d-note">'+(tab.line2==="dca"?"DCA เดือนนี้: ฿":"")+esc(s.note)+'</div>' : "";
-  const eyes = (s.row8!=null && p.value <= s.row8) ? " 👀" : "";
+  const eyes = (s.row8!=null && p.value!=null && p.value <= s.row8) ? " 👀" : "";
+  const cheese = (s.row9!=null && p.value!=null && p.value >= s.row9) ? " 🧀" : "";
   document.getElementById("sheet").innerHTML=
     '<div class="d-head"><div class="d-chip" style="background:'+c.bg+'"></div>'
-    +'<div><div class="d-tk">'+esc(s.ticker)+eyes+'</div>'+noteLine+'</div>'
+    +'<div><div class="d-tk">'+esc(s.ticker)+eyes+cheese+'</div>'+noteLine+'</div>'
     +'<div class="d-price">'+fmtPrice(p.value)
     +'<div class="d-src">'+(p.live?"● ราคาสด (Finnhub)":"ราคาจาก Sheet (~20 นาที)")+'</div></div></div>'
     +rows+extra;
