@@ -314,7 +314,7 @@ function render(){
       const btn=document.createElement("button");
       btn.className="tile";
       btn.style.background=c.bg; btn.style.color=c.fg;
-      if(tab.border) btn.style.boxShadow="inset 0 0 0 2px "+tab.border+", 0 1px 2px rgba(0,0,0,0.08)";
+      if(tab.border && s.scheme==="none") btn.style.boxShadow="inset 0 0 0 1.5px "+tab.border+", 0 1px 2px rgba(0,0,0,0.08)";
       const pv = priceOf(s).value;
       const eyes = (s.row8!=null && pv!=null && pv <= s.row8) ? " 👀" : "";
       const cheese = (s.row9!=null && pv!=null && pv >= s.row9) ? " 🧀" : "";
