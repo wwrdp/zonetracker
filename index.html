@@ -106,9 +106,9 @@ const AUTO_REFRESH_MS = 90 * 1000;   // ราคาวิ่งเองทุ�
 // noZoneFrom: หุ้นลำดับที่ N เป็นต้นไปใน tab นั้น บังคับใช้ scheme "none"
 const TABS = [
   { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  scheme:"standard" },
-  { id:"underdog", label:"UnderDog", gid:"1001789567", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep", noZoneFrom:11 },
+  { id:"underdog", label:"UnderDog", gid:"1001789567", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
   { id:"future",   label:"Future",   gid:"1405580845", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
-  { id:"buyred",   label:"Buy Red",  gid:"763891677",  zones:["scout","build","load","deep"],      line2:"note", scheme:"none" },
+  { id:"buyred",   label:"Buy Red",  gid:"763891677",  zones:["scout","build","load","deep"],      line2:"note", scheme:"deep", noZoneFrom:11, border:"#363636" },
 ];
 
 const COLORS = {
@@ -192,6 +192,11 @@ function parseStrictNum(s){
   const n=parseFloat(c);
   return Number.isFinite(n)?n:null;
 }
+// ถ้า note เป็นตัวเลขล้วน (อาจมี comma คั่นหลักพัน) เอา comma ออก; ถ้าเป็น text อื่นคงไว้
+function stripThousands(s){
+  if(/^-?[\d,]+(\.\d+)?%?$/.test(s) && s.includes(",")) return s.replace(/,/g,"");
+  return s;
+}
 function extractStocks(rows){
   if(!rows||rows.length<3) return [];
   const out=[]; const width=Math.max(...rows.slice(0,9).map(r=>r.length));
@@ -201,7 +206,7 @@ function extractStocks(rows){
     out.push({
       ticker,
       symbol:ticker.replace(/\*/g,"").trim().toUpperCase(),
-      note:(rows[1]&&rows[1][col]||"").trim(),
+      note:stripThousands((rows[1]&&rows[1][col]||"").trim()),
       sheetPrice:parseNum(rows[2]&&rows[2][col]),
       t:[parseNum(rows[3]&&rows[3][col]),parseNum(rows[4]&&rows[4][col]),
          parseNum(rows[5]&&rows[5][col]),parseNum(rows[6]&&rows[6][col])],
@@ -225,7 +230,7 @@ function colorFor(s,tab){
 }
 function fmtPrice(n){
   if(n==null) return "—";
-  return n>=1000 ? "$"+n.toLocaleString("en-US",{maximumFractionDigits:2}) : "$"+n.toFixed(2);
+  return "$"+(Math.round(n*100)/100);
 }
 function esc(s){ return s.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 
@@ -307,15 +312,19 @@ function render(){
       const btn=document.createElement("button");
       btn.className="tile";
       btn.style.background=c.bg; btn.style.color=c.fg;
-      let l2="";
-      if(s.note!==""){
-        const cls = tab.line2==="dca" ? ("dca"+(s.note==="0"?" zero":"")) : "note";
-        l2='<div class="l2 '+cls+'">'+esc(s.note)+'</div>';
-      }
+      if(tab.border) btn.style.boxShadow="inset 0 0 0 2px "+tab.border+", 0 1px 2px rgba(0,0,0,0.08)";
       const pv = priceOf(s).value;
       const eyes = (s.row8!=null && pv!=null && pv <= s.row8) ? " 👀" : "";
       const cheese = (s.row9!=null && pv!=null && pv >= s.row9) ? " 🧀" : "";
-      btn.innerHTML='<div class="tk">'+esc(s.ticker)+eyes+cheese+'</div>'+l2;
+      const emo = eyes + cheese;
+      let l2="";
+      if(s.note!==""){
+        const cls = tab.line2==="dca" ? ("dca"+(s.note==="0"?" zero":"")) : "note";
+        l2='<div class="l2 '+cls+'">'+esc(s.note)+emo+'</div>';
+      } else if(emo){
+        l2='<div class="l2 note">'+emo.trim()+'</div>';
+      }
+      btn.innerHTML='<div class="tk">'+esc(s.ticker)+'</div>'+l2;
       btn.onclick=()=>openDetail(s,tab);
       grid.appendChild(btn);
     });
