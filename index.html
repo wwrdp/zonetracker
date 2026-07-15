@@ -108,7 +108,7 @@ const TABS = [
   { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  scheme:"standard" },
   { id:"underdog", label:"UnderDog", gid:"1001789567", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
   { id:"future",   label:"Future",   gid:"1405580845", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
-  { id:"buyred",   label:"Buy Red",  gid:"763891677",  zones:["scout","build","load","deep"],      line2:"note", scheme:"deep", noZoneFrom:11, border:"#363636" },
+  { id:"buyred",   label:"Buy Red",  gid:"763891677",  zones:["scout","build","load","deep"],      line2:"note", scheme:"deep", noZoneFrom:11, border:"#363636", zoneMaxBand:3 },
 ];
 
 const COLORS = {
@@ -226,7 +226,9 @@ function schemeFor(s,tab){ return SCHEMES[s.scheme||tab.scheme]; }
 function colorFor(s,tab){
   const sch=schemeFor(s,tab);
   const i=sch.band(priceOf(s).value,s.t);
-  return i==null?COLORS.plain:COLORS[sch.palette[i]];
+  if(i==null) return COLORS.plain;
+  if(tab.zoneMaxBand!=null && i>tab.zoneMaxBand) return COLORS.plain; // band ตื้นเกิน -> เทา
+  return COLORS[sch.palette[i]];
 }
 function fmtPrice(n){
   if(n==null) return "—";
