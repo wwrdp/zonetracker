@@ -319,10 +319,10 @@ function render(){
       const emo = eyes + cheese;
       let l2="";
       if(s.note!==""){
-        const cls = tab.line2==="dca" ? ("dca"+(s.note==="0"?" zero":"")) : "note";
+        const cls = "dca"+(s.note==="0"?" zero":"");
         l2='<div class="l2 '+cls+'">'+esc(s.note)+emo+'</div>';
       } else if(emo){
-        l2='<div class="l2 note">'+emo.trim()+'</div>';
+        l2='<div class="l2 dca">'+emo.trim()+'</div>';
       }
       btn.innerHTML='<div class="tk">'+esc(s.ticker)+'</div>'+l2;
       btn.onclick=()=>openDetail(s,tab);
