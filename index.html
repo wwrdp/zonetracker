@@ -114,7 +114,7 @@ const TABS = [
 const COLORS = {
   black:{bg:"#434343",fg:"#fff"},  purple:{bg:"#674ea7",fg:"#fff"},
   blue:{bg:"#4c7be8",fg:"#fff"},   green:{bg:"#9bbb59",fg:"#fff"},
-  yellow:{bg:"#fbbc04",fg:"#fff"}, orange:{bg:"#ff6d01",fg:"#fff"},
+  yellow:{bg:"#fbb404",fg:"#fff"}, orange:{bg:"#ff6d01",fg:"#fff"},
   plain:{bg:"#EFEFEF",fg:"#1F2328"}, red:{bg:"#ea4335",fg:"#fff"},
 };
 
@@ -314,7 +314,7 @@ function render(){
       const btn=document.createElement("button");
       btn.className="tile";
       btn.style.background=c.bg; btn.style.color=c.fg;
-      if(tab.border && s.scheme==="none") btn.style.boxShadow="inset 0 0 0 1.5px "+tab.border+", 0 1px 2px rgba(0,0,0,0.08)";
+      if(tab.border && s.scheme==="none") btn.style.boxShadow="inset 0 0 0 2px "+tab.border+", 0 1px 2px rgba(0,0,0,0.08)";
       const pv = priceOf(s).value;
       const eyes = (s.row8!=null && pv!=null && pv <= s.row8) ? " 👀" : "";
       const cheese = (s.row9!=null && pv!=null && pv >= s.row9) ? " 🧀" : "";
@@ -338,24 +338,27 @@ function openDetail(s,tab){
   const sch=schemeFor(s,tab);
   const c=colorFor(s,tab);
   const p=priceOf(s);
-  const idx=sch.band(p.value,s.t);
+  // ใช้ scheme "deep" คำนวณโซนใน popup เสมอถ้า threshold ครบ (แม้ tile จะเป็น none/เทา)
+  const zsch = sch.hideZones ? SCHEMES.deep : sch;
+  const idx=zsch.band(p.value,s.t);
+  const hasZones = s.t.every(x=>x!=null);
   let rows="";
-  if(!sch.hideZones){
+  if(hasZones){
     s.t.forEach((th,i)=>{
-      const band=sch.thBand(i);
+      const band=zsch.thBand(i);
       const on=idx!=null&&idx===band;
-      const bc=COLORS[sch.palette[band]];
+      const bc=COLORS[zsch.palette[band]];
       rows+='<div class="zrow'+(on?" on":"")+'"'+(on?' style="background:'+bc.bg+';color:'+bc.fg+'"':'')+'>'
           +'<span style="text-transform:capitalize">'+tab.zones[i]+'</span><span>'+fmtPrice(th)+'</span></div>';
     });
   }
   let extra="";
-  const ex=idx!=null?sch.extras(idx,s.t,tab.zones):null;
+  const ex=(hasZones&&idx!=null)?zsch.extras(idx,s.t,tab.zones):null;
   if(ex){
     if(ex.type==="extra") extra='<div class="zextra" style="background:'+COLORS[ex.color].bg+'">'+ex.text+'</div>';
     else extra='<div class="zhint">'+ex.text+'</div>';
   }
-  if(sch.hideZones && s.row8!=null){
+  if(s.row8!=null){
     extra+='<div class="zhint">👀 ที่ '+fmtPrice(s.row8)+'</div>';
   }
   if(s.row9!=null){
