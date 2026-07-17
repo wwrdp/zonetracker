@@ -108,7 +108,7 @@ const TABS = [
   { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  scheme:"standard" },
   { id:"underdog", label:"UnderDog", gid:"1001789567", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
   { id:"future",   label:"Future",   gid:"1405580845", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
-  { id:"buyred",   label:"Buy Red",  gid:"763891677",  zones:["scout","build","load","deep"],      line2:"note", scheme:"deep", noZoneFrom:11, border:"#363636", zoneMaxBand:3 },
+  { id:"buyred",   label:"Buy Red",  gid:"763891677",  zones:["scout","build","load","deep"],      line2:"note", scheme:"deep", noZoneFrom:11, zoneMaxBand:3 },
 ];
 
 const COLORS = {
@@ -116,6 +116,7 @@ const COLORS = {
   blue:{bg:"#4c7be8",fg:"#fff"},   green:{bg:"#9bbb59",fg:"#fff"},
   yellow:{bg:"#fbb404",fg:"#fff"}, orange:{bg:"#ff6d01",fg:"#fff"},
   plain:{bg:"#EFEFEF",fg:"#1F2328"}, red:{bg:"#ea4335",fg:"#fff"},
+  darkgrey:{bg:"#363636",fg:"#fff"},
 };
 
 // band(c, [r4,r5,r6,r7]) คืน index ของสีใน palette (null = ข้อมูลไม่ครบ)
@@ -225,6 +226,7 @@ function priceOf(s){
 function schemeFor(s,tab){ return SCHEMES[s.scheme||tab.scheme]; }
 function colorFor(s,tab){
   const sch=schemeFor(s,tab);
+  if(sch.hideZones) return COLORS.darkgrey; // tier 3 (buy red 11+) พื้นเข้มให้ 👀/🧀 เด่น
   const i=sch.band(priceOf(s).value,s.t);
   if(i==null) return COLORS.plain;
   if(tab.zoneMaxBand!=null && i>tab.zoneMaxBand) return COLORS.plain; // band ตื้นเกิน -> เทา
