@@ -35,6 +35,9 @@
     font-weight: 800; font-size: clamp(11px, 22cqw, 20px); letter-spacing: .2px;
     line-height: 1.1; white-space: nowrap;
   }
+  .tile .emo {
+    font-size: clamp(11px, 22cqw, 20px); line-height: 1.1; white-space: nowrap;
+  }
   .tile .l2 {
     line-height: 1.15; text-align: center; word-break: break-word;
     font-variant-numeric: tabular-nums;
@@ -318,17 +321,16 @@ function render(){
       btn.style.background=c.bg; btn.style.color=c.fg;
       if(tab.border && s.scheme==="none") btn.style.boxShadow="inset 0 0 0 2px "+tab.border+", 0 1px 2px rgba(0,0,0,0.08)";
       const pv = priceOf(s).value;
-      const eyes = (s.row8!=null && pv!=null && pv <= s.row8) ? " 👀" : "";
-      const cheese = (s.row9!=null && pv!=null && pv >= s.row9) ? " 🧀" : "";
+      const eyes = (s.row8!=null && pv!=null && pv <= s.row8) ? "👀" : "";
+      const cheese = (s.row9!=null && pv!=null && pv >= s.row9) ? "🧀" : "";
       const emo = eyes + cheese;
+      const l1 = emo ? '<div class="emo">'+emo+'</div>' : '';
       let l2="";
       if(s.note!==""){
         const cls = "dca"+(s.note==="0"?" zero":"");
-        l2='<div class="l2 '+cls+'">'+esc(s.note)+emo+'</div>';
-      } else if(emo){
-        l2='<div class="l2 dca">'+emo.trim()+'</div>';
+        l2='<div class="l2 '+cls+'">'+esc(s.note)+'</div>';
       }
-      btn.innerHTML='<div class="tk">'+esc(s.ticker)+'</div>'+l2;
+      btn.innerHTML=l1+'<div class="tk">'+esc(s.ticker)+'</div>'+l2;
       btn.onclick=()=>openDetail(s,tab);
       grid.appendChild(btn);
     });
