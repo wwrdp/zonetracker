@@ -1,405 +1,421 @@
-<!DOCTYPE html>
-<html lang="th">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>paint invest</title>
-<style>
-  :root { --bg: #F6F7F9; --ink: #1F2328; --muted: #9CA3AF; --line: #E5E7EB; }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Thai', sans-serif;
-  }
-  .wrap {
-    max-width: 640px; margin: 0 auto;
-    padding: calc(8px + env(safe-area-inset-top)) 8px calc(80px + env(safe-area-inset-bottom));
-  }
-  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
-  /* จอกว้าง (คอม): 10 คอลัมน์ต่อแถว */
-  @media (min-width: 700px) {
-    .wrap { max-width: 1180px; }
-    .grid { grid-template-columns: repeat(10, 1fr); }
-  }
-  .tile {
-    aspect-ratio: 1/1; border: none; border-radius: 10px; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 2px; padding: 4px; overflow: hidden; font-family: inherit;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: transform .08s ease;
-    container-type: inline-size;
-  }
-  .tile:active { transform: scale(0.95); }
-  .tile .tk {
-    font-weight: 800; font-size: clamp(11px, 22cqw, 20px); letter-spacing: .2px;
-    line-height: 1.1; white-space: nowrap;
-  }
-  .tile .emo {
-    font-size: clamp(11px, 22cqw, 20px); line-height: 1.1; white-space: nowrap;
-  }
-  .tile .l2 {
-    line-height: 1.15; text-align: center; word-break: break-word;
-    font-variant-numeric: tabular-nums;
-  }
-  .tile .l2.dca { font-size: clamp(10px, 17cqw, 14px); font-weight: 700; opacity: .95; }
-  .tile .l2.dca.zero { opacity: .55; }
-  .tile .l2.note { font-size: clamp(8px, 13cqw, 12px); font-weight: 500; opacity: .95; }
-  .msg { text-align: center; padding: 40px 0; color: var(--muted); font-size: 14px; }
-  .err {
-    background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C;
-    border-radius: 12px; padding: 12px 14px; font-size: 13px; margin: 6px 4px;
-  }
-  .err button {
-    border: none; background: transparent; color: #B91C1C; font-weight: 700;
-    text-decoration: underline; cursor: pointer; font-size: 13px; font-family: inherit;
-  }
-  #refresh {
-    position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom));
-    width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line);
-    background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
-    color: var(--ink); font-size: 20px; cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0,0,0,.12); z-index: 40;
-  }
-  #refresh:active { transform: scale(.92); }
-  #refresh.spin { animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  /* detail sheet */
-  #overlay {
-    position: fixed; inset: 0; background: rgba(15,18,24,.45); z-index: 50;
-    display: none; align-items: flex-end; justify-content: center;
-  }
-  #overlay.show { display: flex; }
-  #sheet {
-    width: 100%; max-width: 560px; background: #fff; border-radius: 18px 18px 0 0;
-    padding: 20px 20px calc(28px + env(safe-area-inset-bottom));
-    box-shadow: 0 -8px 30px rgba(0,0,0,.18);
-  }
-  .d-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-  .d-chip { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; }
-  .d-tk { font-weight: 800; font-size: 20px; }
-  .d-note { font-size: 13px; color: #6B7280; }
-  .d-price { font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; margin-left: auto; text-align: right; }
-  .d-src { font-size: 10.5px; font-weight: 500; color: #9CA3AF; }
-  .zrow {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 12px; border-radius: 8px; background: #F4F5F7; color: #374151;
-    font-weight: 500; font-size: 14px; margin-bottom: 6px;
-  }
-  .zrow span:last-child { font-variant-numeric: tabular-nums; }
-  .zrow.on { font-weight: 700; }
-  .zextra { padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; text-align: center; color: #fff; margin-bottom: 6px; }
-  .zhint { padding: 6px 12px; font-size: 12.5px; color: #6B7280; text-align: center; }
-</style>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
 </head>
 <body>
-<div class="wrap"><div id="grid-area"></div></div>
-<button id="refresh" aria-label="refresh">↻</button>
-<div id="overlay"><div id="sheet"></div></div>
-
-<script>
-const PUB_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_Ov-ZcBPZuMoXbqGJ8g0Q3yt3MyZXtxZ95jugQU-GFPTNA4RrnQSjRBm6lEZBZY74u3y77oYsJILT/pub";
-const FINNHUB_KEY = "d8vk65pr01qgrv4p0h90d8vk65pr01qgrv4p0h9g";
-const QUOTE_COOLDOWN_MS = 60 * 1000; // กัน rate limit: ดึง Finnhub ชุดใหม่ได้ทุก 60 วิ
-const AUTO_REFRESH_MS = 90 * 1000;   // ราคาวิ่งเองทุก 90 วิ (เฉพาะตอนหน้า active)
-
-// scheme "standard" (Growth): 6 band, เพดานแดง = watch×1.2
-// scheme "deep" (UnderDog/Future): 7 band, ดำต่ำกว่า deep×0.75, ส้ม scout→scout×1.02, แดงเกิน scout×1.02
-// scheme "none" (Buy Red): ไม่มีสีโซน แสดงแค่ ticker + 👀 (ราคา ≤ row 8) + note
-// noZoneFrom: หุ้นลำดับที่ N เป็นต้นไปใน tab นั้น บังคับใช้ scheme "none"
-const TABS = [
-  { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  scheme:"standard" },
-  { id:"underdog", label:"UnderDog", gid:"1001789567", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
-  { id:"future",   label:"Future",   gid:"1405580845", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
-  { id:"buyred",   label:"Buy Red",  gid:"763891677",  zones:["scout","build","load","deep"],      line2:"note", scheme:"deep", noZoneFrom:11, zoneMaxBand:3 },
-];
-
-const COLORS = {
-  black:{bg:"#434343",fg:"#fff"},  purple:{bg:"#674ea7",fg:"#fff"},
-  blue:{bg:"#4c7be8",fg:"#fff"},   green:{bg:"#9bbb59",fg:"#fff"},
-  yellow:{bg:"#fbb404",fg:"#fff"}, orange:{bg:"#ff6d01",fg:"#fff"},
-  plain:{bg:"#EFEFEF",fg:"#1F2328"}, red:{bg:"#ea4335",fg:"#fff"},
-  darkgrey:{bg:"#363636",fg:"#fff"},
-};
-
-// band(c, [r4,r5,r6,r7]) คืน index ของสีใน palette (null = ข้อมูลไม่ครบ)
-// thBand(i) = band ที่ threshold row i (0=r4 .. 3=r7) เป็นเพดาน (ใช้ highlight ใน detail)
-const SCHEMES = {
-  standard: {
-    palette:["purple","blue","green","yellow","plain","red"],
-    band(c,[r4,r5,r6,r7]){
-      if(c==null||[r4,r5,r6,r7].some(x=>x==null)) return null;
-      if(c<=r7) return 0; if(c<=r6) return 1; if(c<=r5) return 2;
-      if(c<=r4) return 3; if(c<=r4*1.2) return 4; return 5;
-    },
-    thBand(i){ return 3-i; },
-    extras(idx,t,zones){
-      if(idx===5) return {type:"extra", color:"red", text:"เกิน +20% จาก "+zones[0]+" ("+fmtPrice(t[0]*1.2)+")"};
-      if(idx===4) return {type:"hint", text:"อยู่เหนือ "+zones[0]+" แต่ยังไม่เกิน +20% ("+fmtPrice(t[0]*1.2)+")"};
-      return null;
-    },
-  },
-  deep: {
-    palette:["black","purple","blue","green","yellow","orange","red"],
-    band(c,[r4,r5,r6,r7]){
-      if(c==null||[r4,r5,r6,r7].some(x=>x==null)) return null;
-      if(c<=r7*0.75) return 0; if(c<=r7) return 1; if(c<=r6) return 2;
-      if(c<=r5) return 3; if(c<=r4) return 4; if(c<=r4*1.02) return 5; return 6;
-    },
-    thBand(i){ return 4-i; },
-    extras(idx,t,zones){
-      if(idx===6) return {type:"extra", color:"red", text:"เกิน "+zones[0]+" +2% ("+fmtPrice(t[0]*1.02)+")"};
-      if(idx===5) return {type:"extra", color:"orange", text:"ใกล้ "+zones[0]+" (ไม่เกิน "+fmtPrice(t[0]*1.02)+")"};
-      if(idx===0) return {type:"extra", color:"black", text:"ต่ำกว่า "+zones[3]+" −25% ("+fmtPrice(t[3]*0.75)+")"};
-      return null;
-    },
-  },
-  none: {
-    hideZones: true,
-    palette:["plain"],
-    band(){ return null; },   // null -> สีเทาอ่อนเสมอ
-    thBand(){ return -1; },
-    extras(){ return null; },
-  },
-};
-
-const state = { data:{}, quotes:{}, lastQuoteFetch:0 };
-
-function parseCSV(text){
-  const rows=[]; let row=[], cur="", q=false;
-  for(let i=0;i<text.length;i++){
-    const ch=text[i];
-    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
-    else{
-      if(ch==='"') q=true;
-      else if(ch===","){ row.push(cur); cur=""; }
-      else if(ch==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
-      else if(ch!=="\r") cur+=ch;
-    }
-  }
-  if(cur.length||row.length){ row.push(cur); rows.push(row); }
-  return rows;
-}
-function parseNum(s){
-  if(s==null) return null;
-  const c=String(s).replace(/[$,฿\s]/g,"");
-  if(c==="") return null;
-  const n=parseFloat(c);
-  return Number.isFinite(n)?n:null;
-}
-// รับเฉพาะตัวเลขล้วน (ปฏิเสธ "193 / $15", "JUL" ฯลฯ) สำหรับเงื่อนไข eyes
-function parseStrictNum(s){
-  if(s==null) return null;
-  const c=String(s).trim().replace(/[$,฿\s]/g,"");
-  if(c==="") return null;
-  if(!/^-?\d*\.?\d+$/.test(c)) return null;
-  const n=parseFloat(c);
-  return Number.isFinite(n)?n:null;
-}
-// ถ้า note เป็นตัวเลขล้วน (อาจมี comma คั่นหลักพัน) เอา comma ออก; ถ้าเป็น text อื่นคงไว้
-function stripThousands(s){
-  if(/^-?[\d,]+(\.\d+)?%?$/.test(s) && s.includes(",")) return s.replace(/,/g,"");
-  return s;
-}
-function extractStocks(rows){
-  if(!rows||rows.length<3) return [];
-  const out=[]; const width=Math.max(...rows.slice(0,9).map(r=>r.length));
-  for(let col=1;col<width;col++){
-    const ticker=(rows[0]&&rows[0][col]||"").trim();
-    if(!ticker) continue;
-    out.push({
-      ticker,
-      symbol:ticker.replace(/\*/g,"").trim().toUpperCase(),
-      note:stripThousands((rows[1]&&rows[1][col]||"").trim()),
-      sheetPrice:parseNum(rows[2]&&rows[2][col]),
-      t:[parseNum(rows[3]&&rows[3][col]),parseNum(rows[4]&&rows[4][col]),
-         parseNum(rows[5]&&rows[5][col]),parseNum(rows[6]&&rows[6][col])],
-      row8:parseStrictNum(rows[7]&&rows[7][col]),
-      row9:parseStrictNum(rows[8]&&rows[8][col]),
-    });
-  }
-  return out;
-}
-function priceOf(s){
-  const q=state.quotes[s.symbol];
-  if(q!=null) return {value:q, live:true};
-  return {value:s.sheetPrice, live:false};
-}
-// scheme ของหุ้นตัวนั้น (อาจถูก override เป็น "none" ด้วย noZoneFrom)
-function schemeFor(s,tab){ return SCHEMES[s.scheme||tab.scheme]; }
-function colorFor(s,tab){
-  const sch=schemeFor(s,tab);
-  if(sch.hideZones) return COLORS.darkgrey; // tier 3 (buy red 11+) พื้นเข้มให้ 👀/🧀 เด่น
-  const i=sch.band(priceOf(s).value,s.t);
-  if(i==null) return COLORS.plain;
-  if(tab.zoneMaxBand!=null && i>tab.zoneMaxBand) return COLORS.plain; // band ตื้นเกิน -> เทา
-  return COLORS[sch.palette[i]];
-}
-function fmtPrice(n){
-  if(n==null) return "—";
-  return "$"+(Math.round(n*100)/100);
-}
-function esc(s){ return s.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
-
-async function loadTab(tab){
-  try{
-    const url=PUB_BASE+"?gid="+tab.gid+"&single=true&output=csv&cachebust="+Date.now();
-    const res=await fetch(url,{cache:"no-store"});
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    const text=await res.text();
-    if(text.trim().startsWith("<")) throw new Error("ได้ HTML แทน CSV — เช็คว่า publish เป็น CSV แล้ว");
-    const stocks=extractStocks(parseCSV(text));
-    if(!stocks.length) throw new Error("ไม่พบข้อมูลหุ้น");
-    stocks.forEach((s,i)=>{
-      s.scheme = (tab.noZoneFrom && (i+1)>=tab.noZoneFrom) ? "none" : tab.scheme;
-    });
-    state.data[tab.id]={stocks};
-  }catch(e){
-    state.data[tab.id]={...(state.data[tab.id]||{}), error:e.message||"โหลดไม่สำเร็จ"};
-  }
-}
-
-async function fetchQuote(symbol){
-  try{
-    const res=await fetch("https://finnhub.io/api/v1/quote?symbol="+encodeURIComponent(symbol)+"&token="+FINNHUB_KEY);
-    if(!res.ok) return;
-    const j=await res.json();
-    if(j&&typeof j.c==="number"&&j.c>0) state.quotes[symbol]=j.c;
-  }catch(e){ /* fallback ราคา Sheet */ }
-}
-
-async function fetchAllQuotes(){
-  const now=Date.now();
-  if(now-state.lastQuoteFetch<QUOTE_COOLDOWN_MS) return;
-  state.lastQuoteFetch=now;
-  const symbols=new Set();
-  TABS.forEach(tab=>{
-    const d=state.data[tab.id]||{};
-    (d.stocks||[]).forEach(s=>symbols.add(s.symbol));
-  });
-  await Promise.all([...symbols].map(fetchQuote));
-}
-
-async function loadAll(){
-  const btn=document.getElementById("refresh");
-  btn.classList.add("spin");
-  if(!TABS.some(t=>(state.data[t.id]||{}).stocks)){
-    document.getElementById("grid-area").innerHTML='<div class="msg">กำลังดึงข้อมูล...</div>';
-  }
-  await Promise.all(TABS.map(loadTab));
-  render();
-  await fetchAllQuotes();
-  render();
-  btn.classList.remove("spin");
-}
-
-function render(){
-  const area=document.getElementById("grid-area");
-  area.innerHTML="";
-  TABS.forEach(tab=>{
-    const d=state.data[tab.id]||{};
-    if(d.error&&!d.stocks){
-      const div=document.createElement("div");
-      div.className="err";
-      div.innerHTML='โหลด '+tab.label+' ไม่สำเร็จ: '+esc(d.error)+' ';
-      const b=document.createElement("button");
-      b.textContent="ลองใหม่";
-      b.onclick=()=>{ loadTab(tab).then(render); };
-      div.appendChild(b);
-      area.appendChild(div);
-    }
-  });
-  const grid=document.createElement("div");
-  grid.className="grid";
-  TABS.forEach(tab=>{
-    const d=state.data[tab.id]||{};
-    if(!d.stocks) return;
-    d.stocks.forEach(s=>{
-      const c=colorFor(s,tab);
-      const btn=document.createElement("button");
-      btn.className="tile";
-      btn.style.background=c.bg; btn.style.color=c.fg;
-      if(tab.border && s.scheme==="none") btn.style.boxShadow="inset 0 0 0 2px "+tab.border+", 0 1px 2px rgba(0,0,0,0.08)";
-      const pv = priceOf(s).value;
-      const eyes = (s.row8!=null && pv!=null && pv <= s.row8) ? "👀" : "";
-      const cheese = (s.row9!=null && pv!=null && pv >= s.row9) ? "🧀" : "";
-      const emo = eyes + cheese;
-      const l1 = emo ? '<div class="emo">'+emo+'</div>' : '';
-      let l2="";
-      if(s.note!==""){
-        const cls = "dca"+(s.note==="0"?" zero":"");
-        l2='<div class="l2 '+cls+'">'+esc(s.note)+'</div>';
-      }
-      btn.innerHTML=l1+'<div class="tk">'+esc(s.ticker)+'</div>'+l2;
-      btn.onclick=()=>openDetail(s,tab);
-      grid.appendChild(btn);
-    });
-  });
-  if(grid.children.length) area.appendChild(grid);
-}
-
-function openDetail(s,tab){
-  const sch=schemeFor(s,tab);
-  const c=colorFor(s,tab);
-  const p=priceOf(s);
-  // ใช้ scheme "deep" คำนวณโซนใน popup เสมอถ้า threshold ครบ (แม้ tile จะเป็น none/เทา)
-  const zsch = sch.hideZones ? SCHEMES.deep : sch;
-  const idx=zsch.band(p.value,s.t);
-  const hasZones = s.t.every(x=>x!=null);
-  let rows="";
-  if(hasZones){
-    s.t.forEach((th,i)=>{
-      const band=zsch.thBand(i);
-      const on=idx!=null&&idx===band;
-      const bc=COLORS[zsch.palette[band]];
-      rows+='<div class="zrow'+(on?" on":"")+'"'+(on?' style="background:'+bc.bg+';color:'+bc.fg+'"':'')+'>'
-          +'<span style="text-transform:capitalize">'+tab.zones[i]+'</span><span>'+fmtPrice(th)+'</span></div>';
-    });
-  }
-  let extra="";
-  const ex=(hasZones&&idx!=null)?zsch.extras(idx,s.t,tab.zones):null;
-  if(ex){
-    if(ex.type==="extra") extra='<div class="zextra" style="background:'+COLORS[ex.color].bg+'">'+ex.text+'</div>';
-    else extra='<div class="zhint">'+ex.text+'</div>';
-  }
-  if(s.row8!=null){
-    extra+='<div class="zhint">👀 ที่ '+fmtPrice(s.row8)+'</div>';
-  }
-  if(s.row9!=null){
-    extra+='<div class="zhint">🧀 ที่ '+fmtPrice(s.row9)+'</div>';
-  }
-  const noteLine = s.note ? '<div class="d-note">'+(tab.line2==="dca"?"DCA เดือนนี้: ฿":"")+esc(s.note)+'</div>' : "";
-  const eyes = (s.row8!=null && p.value!=null && p.value <= s.row8) ? " 👀" : "";
-  const cheese = (s.row9!=null && p.value!=null && p.value >= s.row9) ? " 🧀" : "";
-  document.getElementById("sheet").innerHTML=
-    '<div class="d-head"><div class="d-chip" style="background:'+c.bg+'"></div>'
-    +'<div><div class="d-tk">'+esc(s.ticker)+eyes+cheese+'</div>'+noteLine+'</div>'
-    +'<div class="d-price">'+fmtPrice(p.value)
-    +'<div class="d-src">'+(p.live?"● ราคาสด (Finnhub)":"ราคาจาก Sheet (~20 นาที)")+'</div></div></div>'
-    +rows+extra;
-  document.getElementById("overlay").classList.add("show");
-}
-document.getElementById("overlay").onclick=function(e){
-  if(e.target===this) this.classList.remove("show");
-};
-document.getElementById("refresh").onclick=loadAll;
-
-// auto-refresh ราคา: วิ่งเองเมื่อหน้า active และครบรอบเวลา
-async function autoTick(){
-  if(document.visibilityState!=="visible") return;
-  if(Date.now()-state.lastQuoteFetch<AUTO_REFRESH_MS) return;
-  const btn=document.getElementById("refresh");
-  btn.classList.add("spin");
-  await fetchAllQuotes();
-  render();
-  btn.classList.remove("spin");
-}
-setInterval(autoTick, 15*1000);
-document.addEventListener("visibilitychange", ()=>{
-  if(document.visibilityState==="visible") autoTick();
-});
-
-loadAll();
-</script>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="th"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1">&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1">&lt;meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"&gt;</p>
+<p class="p1">&lt;meta name="apple-mobile-web-app-capable" content="yes"&gt;</p>
+<p class="p1">&lt;meta name="apple-mobile-web-app-status-bar-style" content="default"&gt;</p>
+<p class="p1">&lt;title&gt;paint invest&lt;/title&gt;</p>
+<p class="p1">&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>:root { --bg: #F6F7F9; --ink: #1F2328; --muted: #9CA3AF; --line: #E5E7EB; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>body {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>margin: 0; background: var(--bg); color: var(--ink);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Thai', sans-serif;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.wrap {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>max-width: 640px; margin: 0 auto;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>padding: calc(8px + env(safe-area-inset-top)) 8px calc(80px + env(safe-area-inset-bottom));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>/* จอกว้าง (คอม): 10 คอลัมน์ต่อแถว */</p>
+<p class="p1"><span class="Apple-converted-space">  </span>@media (min-width: 700px) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.wrap { max-width: 1180px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.grid { grid-template-columns: repeat(10, 1fr); }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.tile {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>aspect-ratio: 1/1; border: none; border-radius: 10px; cursor: pointer;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>display: flex; flex-direction: column; align-items: center; justify-content: center;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>gap: 2px; padding: 4px; overflow: hidden; font-family: inherit;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: transform .08s ease;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>container-type: inline-size;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.tile:active { transform: scale(0.95); }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.tile .tk {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>font-weight: 800; font-size: clamp(11px, 22cqw, 20px); letter-spacing: .2px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>line-height: 1.1; white-space: nowrap;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.tile .emo {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>font-size: clamp(11px, 22cqw, 20px); line-height: 1.1; white-space: nowrap;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.tile .l2 {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>line-height: 1.15; text-align: center; word-break: break-word;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>font-variant-numeric: tabular-nums;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.tile .l2.dca { font-size: clamp(10px, 17cqw, 14px); font-weight: 700; opacity: .95; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.tile .l2.dca.zero { opacity: .55; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.tile .l2.note { font-size: clamp(8px, 13cqw, 12px); font-weight: 500; opacity: .95; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.msg { text-align: center; padding: 40px 0; color: var(--muted); font-size: 14px; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.err {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>border-radius: 12px; padding: 12px 14px; font-size: 13px; margin: 6px 4px;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.err button {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>border: none; background: transparent; color: #B91C1C; font-weight: 700;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>text-decoration: underline; cursor: pointer; font-size: 13px; font-family: inherit;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>#refresh {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>background: rgba(255,255,255,.92); backdrop-filter: blur(6px);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>color: var(--ink); font-size: 20px; cursor: pointer;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>box-shadow: 0 2px 10px rgba(0,0,0,.12); z-index: 40;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>#refresh:active { transform: scale(.92); }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>#refresh.spin { animation: spin 1s linear infinite; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>@keyframes spin { to { transform: rotate(360deg); } }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>/* detail sheet */</p>
+<p class="p1"><span class="Apple-converted-space">  </span>#overlay {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>position: fixed; inset: 0; background: rgba(15,18,24,.45); z-index: 50;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>display: none; align-items: flex-end; justify-content: center;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>#overlay.show { display: flex; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>#sheet {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>width: 100%; max-width: 560px; background: #fff; border-radius: 18px 18px 0 0;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>padding: 20px 20px calc(28px + env(safe-area-inset-bottom));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>box-shadow: 0 -8px 30px rgba(0,0,0,.18);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.d-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.d-chip { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.d-tk { font-weight: 800; font-size: 20px; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.d-note { font-size: 13px; color: #6B7280; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.d-price { font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; margin-left: auto; text-align: right; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.d-src { font-size: 10.5px; font-weight: 500; color: #9CA3AF; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.zrow {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>display: flex; justify-content: space-between; align-items: center;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>padding: 8px 12px; border-radius: 8px; background: #F4F5F7; color: #374151;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>font-weight: 500; font-size: 14px; margin-bottom: 6px;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.zrow span:last-child { font-variant-numeric: tabular-nums; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.zrow.on { font-weight: 700; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.zextra { padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; text-align: center; color: #fff; margin-bottom: 6px; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>.zhint { padding: 6px 12px; font-size: 12.5px; color: #6B7280; text-align: center; }</p>
+<p class="p1">&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1">&lt;div class="wrap"&gt;&lt;div id="grid-area"&gt;&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1">&lt;button id="refresh" aria-label="refresh"&gt;↻&lt;/button&gt;</p>
+<p class="p1">&lt;div id="overlay"&gt;&lt;div id="sheet"&gt;&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;script&gt;</p>
+<p class="p1">const PUB_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_Ov-ZcBPZuMoXbqGJ8g0Q3yt3MyZXtxZ95jugQU-GFPTNA4RrnQSjRBm6lEZBZY74u3y77oYsJILT/pub";</p>
+<p class="p1">const FINNHUB_KEY = "d8vk65pr01qgrv4p0h90d8vk65pr01qgrv4p0h9g";</p>
+<p class="p1">const QUOTE_COOLDOWN_MS = 60 * 1000; // กัน rate limit: ดึง Finnhub ชุดใหม่ได้ทุก 60 วิ</p>
+<p class="p1">const AUTO_REFRESH_MS = 90 * 1000; <span class="Apple-converted-space">  </span>// ราคาวิ่งเองทุก 90 วิ (เฉพาะตอนหน้า active)</p>
+<p class="p2"><br></p>
+<p class="p1">// scheme "standard" (Growth): 6 band, เพดานแดง = watch×1.2</p>
+<p class="p1">// scheme "deep" (UnderDog/Future): 7 band, ดำต่ำกว่า deep×0.75, ส้ม scout→scout×1.02, แดงเกิน scout×1.02</p>
+<p class="p1">// scheme "none" (Buy Red): ไม่มีสีโซน แสดงแค่ ticker + 🧠 (ราคา ≤ row 8) + note</p>
+<p class="p1">// noZoneFrom: หุ้นลำดับที่ N เป็นต้นไปใน tab นั้น บังคับใช้ scheme "none"</p>
+<p class="p1">const TABS = [</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{ id:"growth", <span class="Apple-converted-space">  </span>label:"Growth", <span class="Apple-converted-space">  </span>gid:"105420029",<span class="Apple-converted-space">  </span>zones:["watch","target","strong","review"], line2:"dca",<span class="Apple-converted-space">  </span>scheme:"standard" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{ id:"underdog", label:"UnderDog", gid:"1001789567", zones:["scout","build","load","deep"],<span class="Apple-converted-space">      </span>line2:"note", scheme:"deep" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{ id:"future", <span class="Apple-converted-space">  </span>label:"Future", <span class="Apple-converted-space">  </span>gid:"1405580845", zones:["scout","build","load","deep"],<span class="Apple-converted-space">      </span>line2:"note", scheme:"deep" },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{ id:"buyred", <span class="Apple-converted-space">  </span>label:"Buy Red",<span class="Apple-converted-space">  </span>gid:"763891677",<span class="Apple-converted-space">  </span>zones:["scout","build","load","deep"],<span class="Apple-converted-space">      </span>line2:"note", scheme:"deep", noZoneFrom:11, zoneMaxBand:3 },</p>
+<p class="p1">];</p>
+<p class="p2"><br></p>
+<p class="p1">const COLORS = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>black:{bg:"#434343",fg:"#fff"},<span class="Apple-converted-space">  </span>purple:{bg:"#674ea7",fg:"#fff"},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>blue:{bg:"#4c7be8",fg:"#fff"}, <span class="Apple-converted-space">  </span>green:{bg:"#9bbb59",fg:"#fff"},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>yellow:{bg:"#fbb404",fg:"#fff"}, orange:{bg:"#ff6d01",fg:"#fff"},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>plain:{bg:"#EFEFEF",fg:"#1F2328"}, red:{bg:"#ea4335",fg:"#fff"},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>darkgrey:{bg:"#363636",fg:"#fff"},</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">// band(c, [r4,r5,r6,r7]) คืน index ของสีใน palette (null = ข้อมูลไม่ครบ)</p>
+<p class="p1">// thBand(i) = band ที่ threshold row i (0=r4 .. 3=r7) เป็นเพดาน (ใช้ highlight ใน detail)</p>
+<p class="p1">const SCHEMES = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>standard: {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>palette:["purple","blue","green","yellow","plain","red"],</p>
+<p class="p1"><span class="Apple-converted-space">    </span>band(c,[r4,r5,r6,r7]){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(c==null||[r4,r5,r6,r7].some(x=&gt;x==null)) return null;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(c&lt;=r7) return 0; if(c&lt;=r6) return 1; if(c&lt;=r5) return 2;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(c&lt;=r4) return 3; if(c&lt;=r4*1.2) return 4; return 5;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>thBand(i){ return 3-i; },</p>
+<p class="p1"><span class="Apple-converted-space">    </span>extras(idx,t,zones){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(idx===5) return {type:"extra", color:"red", text:"เกิน +20% จาก "+zones[0]+" ("+fmtPrice(t[0]*1.2)+")"};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(idx===4) return {type:"hint", text:"อยู่เหนือ "+zones[0]+" แต่ยังไม่เกิน +20% ("+fmtPrice(t[0]*1.2)+")"};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return null;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>deep: {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>palette:["black","purple","blue","green","yellow","orange","red"],</p>
+<p class="p1"><span class="Apple-converted-space">    </span>band(c,[r4,r5,r6,r7]){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(c==null||[r4,r5,r6,r7].some(x=&gt;x==null)) return null;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(c&lt;=r7*0.75) return 0; if(c&lt;=r7) return 1; if(c&lt;=r6) return 2;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(c&lt;=r5) return 3; if(c&lt;=r4) return 4; if(c&lt;=r4*1.02) return 5; return 6;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>thBand(i){ return 4-i; },</p>
+<p class="p1"><span class="Apple-converted-space">    </span>extras(idx,t,zones){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(idx===6) return {type:"extra", color:"red", text:"เกิน "+zones[0]+" +2% ("+fmtPrice(t[0]*1.02)+")"};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(idx===5) return {type:"extra", color:"orange", text:"ใกล้ "+zones[0]+" (ไม่เกิน "+fmtPrice(t[0]*1.02)+")"};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(idx===0) return {type:"extra", color:"black", text:"ต่ำกว่า "+zones[3]+" −25% ("+fmtPrice(t[3]*0.75)+")"};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return null;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>none: {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>hideZones: true,</p>
+<p class="p1"><span class="Apple-converted-space">    </span>palette:["plain"],</p>
+<p class="p1"><span class="Apple-converted-space">    </span>band(){ return null; }, <span class="Apple-converted-space">  </span>// null -&gt; สีเทาอ่อนเสมอ</p>
+<p class="p1"><span class="Apple-converted-space">    </span>thBand(){ return -1; },</p>
+<p class="p1"><span class="Apple-converted-space">    </span>extras(){ return null; },</p>
+<p class="p1"><span class="Apple-converted-space">  </span>},</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">const state = { data:{}, quotes:{}, lastQuoteFetch:0 };</p>
+<p class="p2"><br></p>
+<p class="p1">function parseCSV(text){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const rows=[]; let row=[], cur="", q=false;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for(let i=0;i&lt;text.length;i++){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const ch=text[i];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>else{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(ch==='"') q=true;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>else if(ch===","){ row.push(cur); cur=""; }</p>
+<p class="p1"><span class="Apple-converted-space">      </span>else if(ch==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }</p>
+<p class="p1"><span class="Apple-converted-space">      </span>else if(ch!=="\r") cur+=ch;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(cur.length||row.length){ row.push(cur); rows.push(row); }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return rows;</p>
+<p class="p1">}</p>
+<p class="p1">function parseNum(s){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(s==null) return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const c=String(s).replace(/[$,฿\s]/g,"");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(c==="") return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const n=parseFloat(c);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return Number.isFinite(n)?n:null;</p>
+<p class="p1">}</p>
+<p class="p1">// รับเฉพาะตัวเลขล้วน (ปฏิเสธ "193 / $15", "JUL" ฯลฯ) สำหรับเงื่อนไข eyes</p>
+<p class="p1">function parseStrictNum(s){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(s==null) return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const c=String(s).trim().replace(/[$,฿\s]/g,"");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(c==="") return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!/^-?\d*\.?\d+$/.test(c)) return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const n=parseFloat(c);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return Number.isFinite(n)?n:null;</p>
+<p class="p1">}</p>
+<p class="p1">// ถ้า note เป็นตัวเลขล้วน (อาจมี comma คั่นหลักพัน) เอา comma ออก; ถ้าเป็น text อื่นคงไว้</p>
+<p class="p1">function stripThousands(s){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(/^-?[\d,]+(\.\d+)?%?$/.test(s) &amp;&amp; s.includes(",")) return s.replace(/,/g,"");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return s;</p>
+<p class="p1">}</p>
+<p class="p1">function extractStocks(rows){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!rows||rows.length&lt;3) return [];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const out=[]; const width=Math.max(...rows.slice(0,9).map(r=&gt;r.length));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>for(let col=1;col&lt;width;col++){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const ticker=(rows[0]&amp;&amp;rows[0][col]||"").trim();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!ticker) continue;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>out.push({</p>
+<p class="p1"><span class="Apple-converted-space">      </span>ticker,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>symbol:ticker.replace(/\*/g,"").trim().toUpperCase(),</p>
+<p class="p1"><span class="Apple-converted-space">      </span>note:stripThousands((rows[1]&amp;&amp;rows[1][col]||"").trim()),</p>
+<p class="p1"><span class="Apple-converted-space">      </span>sheetPrice:parseNum(rows[2]&amp;&amp;rows[2][col]),</p>
+<p class="p1"><span class="Apple-converted-space">      </span>t:[parseNum(rows[3]&amp;&amp;rows[3][col]),parseNum(rows[4]&amp;&amp;rows[4][col]),</p>
+<p class="p1"><span class="Apple-converted-space">         </span>parseNum(rows[5]&amp;&amp;rows[5][col]),parseNum(rows[6]&amp;&amp;rows[6][col])],</p>
+<p class="p1"><span class="Apple-converted-space">      </span>row8:parseStrictNum(rows[7]&amp;&amp;rows[7][col]),</p>
+<p class="p1"><span class="Apple-converted-space">      </span>row9:parseStrictNum(rows[8]&amp;&amp;rows[8][col]),</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return out;</p>
+<p class="p1">}</p>
+<p class="p1">function priceOf(s){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const q=state.quotes[s.symbol];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(q!=null) return {value:q, live:true};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return {value:s.sheetPrice, live:false};</p>
+<p class="p1">}</p>
+<p class="p1">// scheme ของหุ้นตัวนั้น (อาจถูก override เป็น "none" ด้วย noZoneFrom)</p>
+<p class="p1">function schemeFor(s,tab){ return SCHEMES[s.scheme||tab.scheme]; }</p>
+<p class="p1">function colorFor(s,tab){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const sch=schemeFor(s,tab);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(sch.hideZones) return COLORS.darkgrey; // tier 3 (buy red 11+) พื้นเข้มให้ 🧠/🧀 เด่น</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const i=sch.band(priceOf(s).value,s.t);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(i==null) return COLORS.plain;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(tab.zoneMaxBand!=null &amp;&amp; i&gt;tab.zoneMaxBand) return COLORS.plain; // band ตื้นเกิน -&gt; เทา</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return COLORS[sch.palette[i]];</p>
+<p class="p1">}</p>
+<p class="p1">function fmtPrice(n){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(n==null) return "—";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return "$"+(Math.round(n*100)/100);</p>
+<p class="p1">}</p>
+<p class="p1">function esc(s){ return s.replace(/[&amp;&lt;&gt;"']/g, m=&gt;({"&amp;":"&amp;amp;","&lt;":"&amp;lt;","&gt;":"&amp;gt;",'"':"&amp;quot;","'":"&amp;#39;"}[m])); }</p>
+<p class="p2"><br></p>
+<p class="p1">async function loadTab(tab){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>try{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const url=PUB_BASE+"?gid="+tab.gid+"&amp;single=true&amp;output=csv&amp;cachebust="+Date.now();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const res=await fetch(url,{cache:"no-store"});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!res.ok) throw new Error("HTTP "+res.status);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const text=await res.text();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(text.trim().startsWith("&lt;")) throw new Error("ได้ HTML แทน CSV — เช็คว่า publish เป็น CSV แล้ว");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const stocks=extractStocks(parseCSV(text));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!stocks.length) throw new Error("ไม่พบข้อมูลหุ้น");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>stocks.forEach((s,i)=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>s.scheme = (tab.noZoneFrom &amp;&amp; (i+1)&gt;=tab.noZoneFrom) ? "none" : tab.scheme;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>state.data[tab.id]={stocks};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}catch(e){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>state.data[tab.id]={...(state.data[tab.id]||{}), error:e.message||"โหลดไม่สำเร็จ"};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">async function fetchQuote(symbol){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>try{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const res=await fetch("https://finnhub.io/api/v1/quote?symbol="+encodeURIComponent(symbol)+"&amp;token="+FINNHUB_KEY);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!res.ok) return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const j=await res.json();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(j&amp;&amp;typeof j.c==="number"&amp;&amp;j.c&gt;0) state.quotes[symbol]=j.c;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}catch(e){ /* fallback ราคา Sheet */ }</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">async function fetchAllQuotes(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const now=Date.now();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(now-state.lastQuoteFetch&lt;QUOTE_COOLDOWN_MS) return;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>state.lastQuoteFetch=now;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const symbols=new Set();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>TABS.forEach(tab=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const d=state.data[tab.id]||{};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>(d.stocks||[]).forEach(s=&gt;symbols.add(s.symbol));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>await Promise.all([...symbols].map(fetchQuote));</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">async function loadAll(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const btn=document.getElementById("refresh");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>btn.classList.add("spin");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!TABS.some(t=&gt;(state.data[t.id]||{}).stocks)){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>document.getElementById("grid-area").innerHTML='&lt;div class="msg"&gt;กำลังดึงข้อมูล...&lt;/div&gt;';</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>await Promise.all(TABS.map(loadTab));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>render();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>await fetchAllQuotes();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>render();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>btn.classList.remove("spin");</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function render(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const area=document.getElementById("grid-area");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>area.innerHTML="";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>TABS.forEach(tab=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const d=state.data[tab.id]||{};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(d.error&amp;&amp;!d.stocks){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const div=document.createElement("div");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>div.className="err";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>div.innerHTML='โหลด '+tab.label+' ไม่สำเร็จ: '+esc(d.error)+' ';</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const b=document.createElement("button");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>b.textContent="ลองใหม่";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>b.onclick=()=&gt;{ loadTab(tab).then(render); };</p>
+<p class="p1"><span class="Apple-converted-space">      </span>div.appendChild(b);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>area.appendChild(div);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const grid=document.createElement("div");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>grid.className="grid";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>TABS.forEach(tab=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const d=state.data[tab.id]||{};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!d.stocks) return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>d.stocks.forEach(s=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const c=colorFor(s,tab);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const btn=document.createElement("button");</p>
+<p class="p1"><span class="Apple-converted-space">      </span>btn.className="tile";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>btn.style.background=c.bg; btn.style.color=c.fg;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(tab.border &amp;&amp; s.scheme==="none") btn.style.boxShadow="inset 0 0 0 2px "+tab.border+", 0 1px 2px rgba(0,0,0,0.08)";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const pv = priceOf(s).value;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const eyes = (s.row8!=null &amp;&amp; pv!=null &amp;&amp; pv &lt;= s.row8) ? "🧠" : "";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const cheese = (s.row9!=null &amp;&amp; pv!=null &amp;&amp; pv &gt;= s.row9) ? "🧀" : "";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const emo = eyes + cheese;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const l1 = emo ? '&lt;div class="emo"&gt;'+emo+'&lt;/div&gt;' : '';</p>
+<p class="p1"><span class="Apple-converted-space">      </span>let l2="";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(s.note!==""){</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const cls = "dca"+(s.note==="0"?" zero":"");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>l2='&lt;div class="l2 '+cls+'"&gt;'+esc(s.note)+'&lt;/div&gt;';</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>btn.innerHTML=l1+'&lt;div class="tk"&gt;'+esc(s.ticker)+'&lt;/div&gt;'+l2;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>btn.onclick=()=&gt;openDetail(s,tab);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>grid.appendChild(btn);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(grid.children.length) area.appendChild(grid);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function openDetail(s,tab){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const sch=schemeFor(s,tab);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const c=colorFor(s,tab);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const p=priceOf(s);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>// ใช้ scheme "deep" คำนวณโซนใน popup เสมอถ้า threshold ครบ (แม้ tile จะเป็น none/เทา)</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const zsch = sch.hideZones ? SCHEMES.deep : sch;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const idx=zsch.band(p.value,s.t);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const hasZones = s.t.every(x=&gt;x!=null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>let rows="";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(hasZones){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>s.t.forEach((th,i)=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const band=zsch.thBand(i);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const on=idx!=null&amp;&amp;idx===band;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const bc=COLORS[zsch.palette[band]];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>rows+='&lt;div class="zrow'+(on?" on":"")+'"'+(on?' style="background:'+bc.bg+';color:'+bc.fg+'"':'')+'&gt;'</p>
+<p class="p1"><span class="Apple-converted-space">          </span>+'&lt;span style="text-transform:capitalize"&gt;'+tab.zones[i]+'&lt;/span&gt;&lt;span&gt;'+fmtPrice(th)+'&lt;/span&gt;&lt;/div&gt;';</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>let extra="";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const ex=(hasZones&amp;&amp;idx!=null)?zsch.extras(idx,s.t,tab.zones):null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(ex){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(ex.type==="extra") extra='&lt;div class="zextra" style="background:'+COLORS[ex.color].bg+'"&gt;'+ex.text+'&lt;/div&gt;';</p>
+<p class="p1"><span class="Apple-converted-space">    </span>else extra='&lt;div class="zhint"&gt;'+ex.text+'&lt;/div&gt;';</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(s.row8!=null){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>extra+='&lt;div class="zhint"&gt;🧠 ที่ '+fmtPrice(s.row8)+'&lt;/div&gt;';</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(s.row9!=null){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>extra+='&lt;div class="zhint"&gt;🧀 ที่ '+fmtPrice(s.row9)+'&lt;/div&gt;';</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const noteLine = s.note ? '&lt;div class="d-note"&gt;'+(tab.line2==="dca"?"DCA เดือนนี้: ฿":"")+esc(s.note)+'&lt;/div&gt;' : "";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const eyes = (s.row8!=null &amp;&amp; p.value!=null &amp;&amp; p.value &lt;= s.row8) ? " 🧠" : "";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const cheese = (s.row9!=null &amp;&amp; p.value!=null &amp;&amp; p.value &gt;= s.row9) ? " 🧀" : "";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>document.getElementById("sheet").innerHTML=</p>
+<p class="p1"><span class="Apple-converted-space">    </span>'&lt;div class="d-head"&gt;&lt;div class="d-chip" style="background:'+c.bg+'"&gt;&lt;/div&gt;'</p>
+<p class="p1"><span class="Apple-converted-space">    </span>+'&lt;div&gt;&lt;div class="d-tk"&gt;'+esc(s.ticker)+eyes+cheese+'&lt;/div&gt;'+noteLine+'&lt;/div&gt;'</p>
+<p class="p1"><span class="Apple-converted-space">    </span>+'&lt;div class="d-price"&gt;'+fmtPrice(p.value)</p>
+<p class="p1"><span class="Apple-converted-space">    </span>+'&lt;div class="d-src"&gt;'+(p.live?"● ราคาสด (Finnhub)":"ราคาจาก Sheet (~20 นาที)")+'&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;'</p>
+<p class="p1"><span class="Apple-converted-space">    </span>+rows+extra;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>document.getElementById("overlay").classList.add("show");</p>
+<p class="p1">}</p>
+<p class="p1">document.getElementById("overlay").onclick=function(e){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(e.target===this) this.classList.remove("show");</p>
+<p class="p1">};</p>
+<p class="p1">document.getElementById("refresh").onclick=loadAll;</p>
+<p class="p2"><br></p>
+<p class="p1">// auto-refresh ราคา: วิ่งเองเมื่อหน้า active และครบรอบเวลา</p>
+<p class="p1">async function autoTick(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(document.visibilityState!=="visible") return;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(Date.now()-state.lastQuoteFetch&lt;AUTO_REFRESH_MS) return;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const btn=document.getElementById("refresh");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>btn.classList.add("spin");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>await fetchAllQuotes();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>render();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>btn.classList.remove("spin");</p>
+<p class="p1">}</p>
+<p class="p1">setInterval(autoTick, 15*1000);</p>
+<p class="p1">document.addEventListener("visibilitychange", ()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(document.visibilityState==="visible") autoTick();</p>
+<p class="p1">});</p>
+<p class="p2"><br></p>
+<p class="p1">loadAll();</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
 </body>
 </html>
