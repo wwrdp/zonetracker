@@ -203,7 +203,7 @@ function stripThousands(s){
 }
 function extractStocks(rows){
   if(!rows||rows.length<3) return [];
-  const out=[]; const width=Math.max(...rows.slice(0,9).map(r=>r.length));
+  const out=[]; const width=Math.max(...rows.slice(0,10).map(r=>r.length));
   for(let col=1;col<width;col++){
     const ticker=(rows[0]&&rows[0][col]||"").trim();
     if(!ticker) continue;
@@ -216,6 +216,7 @@ function extractStocks(rows){
          parseNum(rows[5]&&rows[5][col]),parseNum(rows[6]&&rows[6][col])],
       row8:parseStrictNum(rows[7]&&rows[7][col]),
       row9:parseStrictNum(rows[8]&&rows[8][col]),
+      lastBuy:(rows[9]&&rows[9][col]||"").trim(),
     });
   }
   return out;
@@ -367,6 +368,9 @@ function openDetail(s,tab){
   }
   if(s.row9!=null){
     extra+='<div class="zhint">🧀 ที่ '+fmtPrice(s.row9)+'</div>';
+  }
+  if(s.lastBuy){
+    extra+='<div class="zhint">ซื้อล่าสุด: '+esc(s.lastBuy)+'</div>';
   }
   const noteLine = s.note ? '<div class="d-note">'+(tab.line2==="dca"?"DCA เดือนนี้: ฿":"")+esc(s.note)+'</div>' : "";
   const eyes = (s.row8!=null && p.value!=null && p.value <= s.row8) ? " 🧠" : "";
