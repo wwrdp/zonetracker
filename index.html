@@ -90,6 +90,15 @@
   .zrow.on { font-weight: 700; }
   .zextra { padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; text-align: center; color: #fff; margin-bottom: 6px; }
   .zhint { padding: 6px 12px; font-size: 12.5px; color: #6B7280; text-align: center; }
+  .zmgr { margin-top: 14px; padding-top: 12px; border-top: 1px solid #EDEEF0; }
+  .zmgr-t { font-size: 12px; color: #9CA3AF; text-align: center; margin-bottom: 8px; }
+  .zmgr-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .zsw {
+    width: 34px; height: 34px; border-radius: 9px; border: 2px solid transparent;
+    cursor: pointer; padding: 0; font-family: inherit; font-size: 11px; font-weight: 700;
+    color: #6B7280; background: #F4F5F7;
+  }
+  .zsw.on { border-color: #1F2328; }
 </style>
 </head>
 <body>
@@ -228,12 +237,27 @@ function priceOf(s){
 }
 // scheme ของหุ้นตัวนั้น (อาจถูก override เป็น "none" ด้วย noZoneFrom)
 function schemeFor(s,tab){ return SCHEMES[s.scheme||tab.scheme]; }
+// zone override รายหุ้น (เก็บในเครื่อง): key = tabId|ticker, value = band สูงสุดที่ยอมให้แสดงสี
+const ZKEY="zt_zonemax_v1";
+function loadOverrides(){
+  try{ return JSON.parse(localStorage.getItem(ZKEY)||"{}"); }catch(e){ return {}; }
+}
+function saveOverrides(o){
+  try{ localStorage.setItem(ZKEY, JSON.stringify(o)); }catch(e){}
+}
+function ovKey(s,tab){ return tab.id+"|"+s.ticker; }
+function maxBandFor(s,tab){
+  const o=loadOverrides()[ovKey(s,tab)];
+  if(o!=null) return o;              // ผู้ใช้ตั้งเอง
+  return tab.zoneMaxBand;            // ค่าเริ่มต้นของ tab (อาจเป็น undefined = แสดงครบ)
+}
 function colorFor(s,tab){
   const sch=schemeFor(s,tab);
   if(sch.hideZones) return COLORS.darkgrey; // tier 3 (buy red 11+) พื้นเข้มให้ 🧠/🧀 เด่น
   const i=sch.band(priceOf(s).value,s.t);
   if(i==null) return COLORS.plain;
-  if(tab.zoneMaxBand!=null && i>tab.zoneMaxBand) return COLORS.plain; // band ตื้นเกิน -> เทา
+  const mb=maxBandFor(s,tab);
+  if(mb!=null && i>mb) return COLORS.plain; // band ตื้นเกิน -> เทา
   return COLORS[sch.palette[i]];
 }
 function fmtPrice(n){
@@ -372,15 +396,40 @@ function openDetail(s,tab){
   if(s.lastBuy){
     extra+='<div class="zhint">ซื้อล่าสุด: '+esc(s.lastBuy)+'</div>';
   }
+  // แถวจัดการโซน: เลือกว่าจะให้ tile โชว์สีตั้งแต่สีไหนลงไป (ลึกกว่า) — ไม่แสดงใน tier 3
+  let zmgr="";
+  if(!sch.hideZones && hasZones){
+    const cur=maxBandFor(s,tab);
+    const labels={black:"ดำ",purple:"ม่วง",blue:"น้ำเงิน",green:"เขียว",yellow:"เหลือง",orange:"ส้ม",red:"แดง"};
+    let chips='<button class="zsw'+(cur==null?" on":"")+'" data-mb="all" title="แสดงทุกสี">ทั้งหมด</button>';
+    // เรียงจากตื้น(สูง)ไปลึก(ต่ำ): กดสีไหน = โชว์สีนั้นและที่ลึกกว่า
+    for(let b=sch.palette.length-1;b>=0;b--){
+      const name=sch.palette[b];
+      if(name==="plain") continue;
+      chips+='<button class="zsw'+(cur===b?" on":"")+'" data-mb="'+b+'" title="แสดง'+(labels[name]||name)+'ลงไป" style="background:'+COLORS[name].bg+'"></button>';
+    }
+    zmgr='<div class="zmgr"><div class="zmgr-t">โซนที่ให้แสดงสีบน tile</div><div class="zmgr-row">'+chips+'</div></div>';
+  }
   const noteLine = s.note ? '<div class="d-note">'+(tab.line2==="dca"?"DCA เดือนนี้: ฿":"")+esc(s.note)+'</div>' : "";
   const eyes = (s.row8!=null && p.value!=null && p.value <= s.row8) ? " 🧠" : "";
   const cheese = (s.row9!=null && p.value!=null && p.value >= s.row9) ? " 🧀" : "";
-  document.getElementById("sheet").innerHTML=
+  const sheetEl=document.getElementById("sheet");
+  sheetEl.innerHTML=
     '<div class="d-head"><div class="d-chip" style="background:'+c.bg+'"></div>'
     +'<div><div class="d-tk">'+esc(s.ticker)+eyes+cheese+'</div>'+noteLine+'</div>'
     +'<div class="d-price">'+fmtPrice(p.value)
     +'<div class="d-src">'+(p.live?"● ราคาสด (Finnhub)":"ราคาจาก Sheet (~20 นาที)")+'</div></div></div>'
-    +rows+extra;
+    +rows+extra+zmgr;
+  sheetEl.querySelectorAll(".zsw").forEach(btn=>{
+    btn.onclick=()=>{
+      const o=loadOverrides();
+      const v=btn.dataset.mb;
+      if(v==="all") delete o[ovKey(s,tab)]; else o[ovKey(s,tab)]=parseInt(v,10);
+      saveOverrides(o);
+      render();            // อัปเดตสี tile ทันที
+      openDetail(s,tab);   // วาด popup ใหม่ให้ปุ่มที่เลือกติ๊กถูก
+    };
+  });
   document.getElementById("overlay").classList.add("show");
 }
 document.getElementById("overlay").onclick=function(e){
