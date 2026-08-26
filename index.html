@@ -117,10 +117,11 @@ const AUTO_REFRESH_MS = 90 * 1000;   // ราคาวิ่งเองทุ�
 // scheme "none" (Buy Red): ไม่มีสีโซน แสดงแค่ ticker + 🧠 (ราคา ≤ row 8) + note
 // noZoneFrom: หุ้นลำดับที่ N เป็นต้นไปใน tab นั้น บังคับใช้ scheme "none"
 const TABS = [
-  { id:"growth",   label:"Growth",   gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  scheme:"standard" },
-  { id:"underdog", label:"UnderDog", gid:"1001789567", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
-  { id:"future",   label:"Future",   gid:"1405580845", zones:["scout","build","load","deep"],      line2:"note", scheme:"deep" },
-  { id:"buyred",   label:"Buy Red",  gid:"763891677",  zones:["scout","build","load","deep"],      line2:"note", scheme:"deep", noZoneFrom:11, zoneMaxBand:3 },
+  { id:"growth",   label:"Growth",     gid:"105420029",  zones:["watch","target","strong","review"], line2:"dca",  scheme:"standard" },
+  { id:"underdog", label:"UnderDog",   gid:"1001789567", zones:["watch","target","strong","review"], line2:"note", scheme:"standard" },
+  { id:"future",   label:"Future",     gid:"1405580845", zones:["watch","target","strong","review"], line2:"note", scheme:"standard" },
+  { id:"buyred1",  label:"Buy Red T1", gid:"763891677",  zones:["watch","target","strong","review"], line2:"note", scheme:"standard" },
+  { id:"buyred23", label:"Buy Red T2-3",gid:"1779626940", zones:["watch","target","strong","review"], line2:"note", scheme:"standard" },
 ];
 
 const COLORS = {
