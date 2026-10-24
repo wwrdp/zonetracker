@@ -214,7 +214,7 @@ function stripThousands(s){
 }
 function extractStocks(rows){
   if(!rows||rows.length<3) return [];
-  const out=[]; const width=Math.max(...rows.slice(0,10).map(r=>r.length));
+  const out=[]; const width=Math.max(...rows.slice(0,13).map(r=>r.length));
   for(let col=1;col<width;col++){
     const ticker=(rows[0]&&rows[0][col]||"").trim();
     if(!ticker) continue;
@@ -228,6 +228,8 @@ function extractStocks(rows){
       row8:parseStrictNum(rows[7]&&rows[7][col]),
       row9:parseStrictNum(rows[8]&&rows[8][col]),
       lastBuy:(rows[9]&&rows[9][col]||"").trim(),
+      costShare:parseStrictNum(rows[11]&&rows[11][col]),
+      cutPct:parseStrictNum(rows[12]&&rows[12][col]),
     });
   }
   return out;
@@ -252,6 +254,12 @@ function maxBandFor(s,tab){
   const o=loadOverrides()[ovKey(s,tab)];
   if(o!=null) return o;              // ผู้ใช้ตั้งเอง
   return tab.zoneMaxBand;            // ค่าเริ่มต้นของ tab (อาจเป็น undefined = แสดงครบ)
+}
+// cut-loss: current <= cost/share × (1 - cut%/100) → true (ต้องมีครบทั้ง cost/share + cut% + ราคา)
+function hitCutLoss(s){
+  const pv=priceOf(s).value;
+  if(s.costShare==null || s.cutPct==null || pv==null) return false;
+  return pv <= s.costShare * (1 - s.cutPct/100);
 }
 function colorFor(s,tab){
   const sch=schemeFor(s,tab);
@@ -346,7 +354,7 @@ function render(){
       const btn=document.createElement("button");
       btn.className = "tile" + (c===COLORS.plain ? " plain" : "");
       btn.style.background=c.bg; btn.style.color=c.fg;
-      if(tab.border && s.scheme==="none") btn.style.boxShadow="inset 0 0 0 2px "+tab.border+", 0 1px 2px rgba(0,0,0,0.08)";
+      if(hitCutLoss(s)) btn.style.boxShadow="inset 0 0 0 3px #000, 0 1px 2px rgba(0,0,0,0.08)";
       const pv = priceOf(s).value;
       const eyes = (s.row8!=null && pv!=null && pv <= s.row8) ? "🧠" : "";
       const cheese = (s.row9!=null && pv!=null && pv >= s.row9) ? "🧀" : "";
@@ -397,6 +405,10 @@ function openDetail(s,tab){
   }
   if(s.lastBuy){
     extra+='<div class="zhint">ขายล่าสุด: '+esc(s.lastBuy)+'</div>';
+  }
+  if(s.costShare!=null && s.cutPct!=null){
+    const cl=s.costShare*(1-s.cutPct/100);
+    extra+='<div class="zhint">🛑 cut-loss ที่ '+fmtPrice(cl)+' (ทุน '+fmtPrice(s.costShare)+' −'+s.cutPct+'%)</div>';
   }
   // แถวจัดการโซน: เลือกว่าจะให้ tile โชว์สีตั้งแต่สีไหนลงไป (ลึกกว่า) — ไม่แสดงใน tier 3
   let zmgr="";
